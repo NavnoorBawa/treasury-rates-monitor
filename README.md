@@ -120,6 +120,9 @@ This project includes:
 - `api/yields.js`
 - `api/history.js`
 - `vercel.json`
+- `public/robots.txt`, `public/sitemap.xml`, and `public/404.html`
+
+Security headers are configured in `vercel.json` for Vercel and through Helmet for the local Express production server. The app has no required secrets or API keys.
 
 Deploy with:
 

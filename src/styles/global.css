@@ -99,6 +99,11 @@ button {
   padding: 32px 28px 28px;
 }
 
+.app-shell--error {
+  display: grid;
+  place-items: center;
+}
+
 .topbar {
   display: flex;
   align-items: flex-start;
@@ -231,6 +236,16 @@ h3 {
 .notice--warning {
   border-color: var(--warning-border);
   background: var(--warning-bg);
+}
+
+.notice--fatal {
+  max-width: 640px;
+}
+
+.notice--fatal .text-button {
+  justify-content: center;
+  margin-top: 4px;
+  width: fit-content;
 }
 
 .metric-grid {

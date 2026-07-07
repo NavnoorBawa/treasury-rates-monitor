@@ -1,5 +1,4 @@
 import compression from "compression";
-import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import path from "node:path";
@@ -17,12 +16,37 @@ const historyCache = new MemoryCache();
 
 app.disable("x-powered-by");
 app.use(compression());
-app.use(cors());
 app.use(
   helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        imgSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"]
+      }
+    },
+    crossOriginEmbedderPolicy: false,
+    frameguard: {
+      action: "deny"
+    },
+    referrerPolicy: {
+      policy: "strict-origin-when-cross-origin"
+    }
   })
 );
+
+app.use((_request, response, next) => {
+  response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  next();
+});
 
 app.get("/api/health", (_request, response) => {
   response.json({ ok: true, service: "treasury-yield-dashboard" });
@@ -108,7 +132,7 @@ const distPath = path.resolve(__dirname, "..", "dist");
 app.use(express.static(distPath));
 
 app.use((_request, response) => {
-  response.sendFile(path.join(distPath, "index.html"));
+  response.status(404).sendFile(path.join(distPath, "404.html"));
 });
 
 app.listen(PORT, () => {

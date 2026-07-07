@@ -15,7 +15,6 @@
   "dependencies": {
     "@tanstack/react-query": "^5.81.5",
     "compression": "^1.8.0",
-    "cors": "^2.8.5",
     "csv-parse": "^7.0.1",
     "express": "^5.1.0",
     "fast-xml-parser": "^5.2.5",

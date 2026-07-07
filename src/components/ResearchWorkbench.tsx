@@ -214,6 +214,7 @@ export function ResearchWorkbench() {
               className={preset === item ? "segmented-control__button segmented-control__button--active" : "segmented-control__button"}
               type="button"
               key={item}
+              aria-pressed={preset === item}
               onClick={() => setPresetRange(item)}
             >
               {rangePresetLabels[item]}
@@ -323,6 +324,7 @@ export function ResearchWorkbench() {
                     className={selectedSpread === key ? "spread-selector__button spread-selector__button--active" : "spread-selector__button"}
                     type="button"
                     key={key}
+                    aria-pressed={selectedSpread === key}
                     onClick={() => setSelectedSpread(key)}
                   >
                     {spread?.label ?? key}

@@ -87,6 +87,14 @@ export const macroEvents: MacroEvent[] = [
     description: "Sharp repricing after the Fed signaled potential QE tapering."
   },
   {
+    id: "debt-ceiling-2011",
+    title: "2011 debt-ceiling crisis",
+    category: "Policy",
+    startDate: "2011-08-05",
+    endDate: "2011-08-08",
+    description: "S&P U.S. sovereign downgrade and safe-haven Treasury rally during fiscal stress."
+  },
+  {
     id: "fed-2015",
     title: "2015-18 Fed hikes",
     category: "Policy",
@@ -221,11 +229,11 @@ const std = (values: number[]) => {
   return Math.sqrt(variance);
 };
 
-const valueChange = (rows: HistoricalRow[], key: ResearchMaturityKey, lookbackDays: number) => {
+const valueChangeMonths = (rows: HistoricalRow[], key: ResearchMaturityKey, lookbackMonths: number) => {
   const last = rows.filter((row) => typeof row[key] === "number").at(-1);
   if (!last || typeof last[key] !== "number") return null;
 
-  const target = toIsoDate(addMonths(isoToDate(last.date), -Math.round(lookbackDays / 30)));
+  const target = toIsoDate(addMonths(isoToDate(last.date), -lookbackMonths));
   const prior = [...rows]
     .reverse()
     .find((row) => row.date <= target && typeof row[key] === "number");
@@ -261,11 +269,10 @@ export const buildStats = (rows: HistoricalRow[]) =>
         const dailyVol = std(changes);
         return dailyVol === null ? null : dailyVol * Math.sqrt(252);
       })(),
-      oneMonthChangeBps: valueChange(rows, key, 30),
-      threeMonthChangeBps: valueChange(rows, key, 90),
-      oneYearChangeBps: valueChange(rows, key, 365),
+      oneMonthChangeBps: valueChangeMonths(rows, key, 1),
+      threeMonthChangeBps: valueChangeMonths(rows, key, 3),
+      oneYearChangeBps: valueChangeMonths(rows, key, 12),
       percentile: values.length && latest !== null ? (valuesBelow / values.length) * 100 : null,
       observations: values.length
     };
   });
-
