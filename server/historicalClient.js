@@ -1,0 +1,171 @@
+import { parse } from "csv-parse/sync";
+import {
+  FED_H15_TREASURY_CMT_URL,
+  HISTORICAL_MATURITIES,
+  HISTORICAL_SOURCE,
+  RESEARCH_SPREADS
+} from "./config.js";
+import { getTreasuryYieldData } from "./treasuryClient.js";
+
+const fetchWithTimeout = async (url, timeoutMs = 20000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Accept: "text/csv,*/*;q=0.8",
+        "User-Agent": "TreasuryYieldDashboard/1.0 educational dashboard"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Federal Reserve H.15 download returned ${response.status}`);
+    }
+
+    return await response.text();
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const toNumber = (value) => {
+  if (value === null || value === undefined || value === "" || value === "ND" || value === "n.a.") {
+    return null;
+  }
+
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const round = (value, digits = 3) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+};
+
+const isIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+const buildSpreadValues = (row) => {
+  for (const spread of RESEARCH_SPREADS) {
+    const high = row[spread.minuend];
+    const low = row[spread.subtrahend];
+    row[spread.key] = typeof high === "number" && typeof low === "number" ? round((high - low) * 100, 1) : null;
+  }
+
+  return row;
+};
+
+const parseFedCsv = (csv) => {
+  const records = parse(csv, {
+    relax_column_count: true,
+    skip_empty_lines: true
+  });
+
+  const headerIndex = records.findIndex((row) => row[0] === "Time Period");
+  if (headerIndex === -1) {
+    throw new Error("Federal Reserve H.15 CSV did not include a Time Period header.");
+  }
+
+  const headers = records[headerIndex];
+  const fieldIndex = new Map(headers.map((field, index) => [field, index]));
+
+  const rows = records
+    .slice(headerIndex + 1)
+    .filter((record) => isIsoDate(record[0]))
+    .map((record) => {
+      const row = { date: record[0] };
+
+      for (const maturity of HISTORICAL_MATURITIES) {
+        const index = fieldIndex.get(maturity.field);
+        row[maturity.key] = typeof index === "number" ? toNumber(record[index]) : null;
+      }
+
+      return buildSpreadValues(row);
+    })
+    .filter((row) => HISTORICAL_MATURITIES.some((maturity) => typeof row[maturity.key] === "number"));
+
+  return rows;
+};
+
+const treasuryLatestToResearchRow = (treasuryData) => {
+  const row = { date: treasuryData.source.recordDate };
+
+  for (const point of treasuryData.curve) {
+    if (HISTORICAL_MATURITIES.some((maturity) => maturity.key === point.key)) {
+      row[point.key] = point.value;
+    }
+  }
+
+  return buildSpreadValues(row);
+};
+
+const mergeTreasuryLatest = async (rows) => {
+  try {
+    const treasuryData = await getTreasuryYieldData();
+    const latestTreasuryRow = treasuryLatestToResearchRow(treasuryData);
+    const existingIndex = rows.findIndex((row) => row.date === latestTreasuryRow.date);
+
+    if (existingIndex >= 0) {
+      rows[existingIndex] = { ...rows[existingIndex], ...latestTreasuryRow };
+      return { rows, supplementalSource: "Treasury XML replaced matching latest date." };
+    }
+
+    const latestFedDate = rows.at(-1)?.date;
+    if (latestFedDate && latestTreasuryRow.date > latestFedDate) {
+      return {
+        rows: [...rows, latestTreasuryRow].sort((a, b) => a.date.localeCompare(b.date)),
+        supplementalSource: "Treasury XML appended fresher latest official observation."
+      };
+    }
+
+    return { rows, supplementalSource: "Federal Reserve H.15 contains the latest research observation." };
+  } catch (error) {
+    return {
+      rows,
+      supplementalSource:
+        error instanceof Error
+          ? `Treasury latest supplement unavailable: ${error.message}`
+          : "Treasury latest supplement unavailable."
+    };
+  }
+};
+
+const buildAvailability = (rows) =>
+  Object.fromEntries(
+    HISTORICAL_MATURITIES.map((maturity) => {
+      const valid = rows.filter((row) => typeof row[maturity.key] === "number");
+      return [
+        maturity.key,
+        {
+          firstDate: valid[0]?.date ?? null,
+          lastDate: valid.at(-1)?.date ?? null,
+          observations: valid.length
+        }
+      ];
+    })
+  );
+
+export async function getHistoricalYieldData() {
+  const csv = await fetchWithTimeout(FED_H15_TREASURY_CMT_URL);
+  const parsedRows = parseFedCsv(csv);
+  const { rows, supplementalSource } = await mergeTreasuryLatest(parsedRows);
+
+  return {
+    source: {
+      ...HISTORICAL_SOURCE,
+      retrievedAt: new Date().toISOString(),
+      recordStartDate: rows[0]?.date ?? null,
+      recordEndDate: rows.at(-1)?.date ?? null,
+      supplementalSource,
+      note:
+        "30Y data has a historical gap around the 2002-2006 Treasury discontinuation/reintroduction period; missing observations are preserved as nulls."
+    },
+    maturities: HISTORICAL_MATURITIES.map(({ field, ...maturity }) => maturity),
+    spreads: RESEARCH_SPREADS,
+    availability: buildAvailability(rows),
+    rows
+  };
+}
+
