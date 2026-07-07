@@ -30,7 +30,7 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 - Date-range presets: 1Y, 5Y, 10Y, 20Y, Max, plus custom start/end dates.
 - Macro event markers with focus windows for major market, policy, crisis, and geopolitical shocks.
 - Yield spread analysis for all six 2Y/5Y/10Y/30Y curve combinations: 5Y-2Y, 10Y-2Y, 30Y-2Y, 10Y-5Y, 30Y-5Y, and 30Y-10Y, plus 10Y-3M as a policy-sensitive curve measure.
-- Weekly and monthly curve movement classification at the selected range-end date, including short/long tenor deltas, spread deltas, and six movement types: bull steepening, bear steepening, bull flattening, bear flattening, parallel shift higher, and parallel shift lower.
+- Weekly and monthly curve movement classification at the selected range-end date, using available prior observations even when the lookback starts before the visible chart window. The table includes short/long tenor deltas, spread deltas, and six movement types: bull steepening, bear steepening, bull flattening, bear flattening, parallel shift higher, and parallel shift lower.
 - Selected-range CSV export containing dates, 2Y/5Y/10Y/30Y yields, and all six core curve spreads.
 - Rule-based current year-end curve scenario analysis using current curve shape and recent spread momentum. This is scenario analysis only, not a point forecast or investment recommendation.
 - Selected-period statistics: latest, min, max, average, annualized daily-change volatility, 1M/3M/1Y changes, percentile rank, and observation count.

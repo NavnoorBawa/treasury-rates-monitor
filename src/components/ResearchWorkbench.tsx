@@ -188,9 +188,13 @@ export function ResearchWorkbench() {
   }, [range.end, range.start]);
 
   const stats = useMemo(() => buildStats(selectedRows), [selectedRows]);
+  const curveMovementRows = useMemo(() => {
+    if (!data?.rows.length || !range.end) return [];
+    return data.rows.filter((row) => row.date <= range.end);
+  }, [data?.rows, range.end]);
   const curveMovement = useMemo(
-    () => (selectedRows.length ? buildCurveMovementAnalysis(selectedRows) : null),
-    [selectedRows]
+    () => (curveMovementRows.length ? buildCurveMovementAnalysis(curveMovementRows) : null),
+    [curveMovementRows]
   );
   const currentCurveMovement = useMemo(
     () => (data?.rows.length ? buildCurveMovementAnalysis(data.rows) : null),
@@ -331,87 +335,6 @@ export function ResearchWorkbench() {
         </div>
       </div>
 
-      {curveMovement ? (
-        <article className="panel curve-movement-panel">
-          <div className="panel__header">
-            <div>
-              <p className="eyebrow">Curve movement decomposition</p>
-              <h3>Steepening, Flattening, and Parallel Shift Analysis</h3>
-            </div>
-            <span className="panel__meta">
-              Range-end complete curve {curveMovement.latestDate ? formatDate(curveMovement.latestDate) : "n/a"}
-            </span>
-          </div>
-
-          <div className="curve-movement-kpis">
-            <div className="curve-movement-card">
-              <span>Dominant 1W move</span>
-              <strong>{curveMovement.dominantWeekly?.pair.label ?? "n/a"}</strong>
-              <em className={curveMoveBadgeClass(dominantWeeklyMove?.type)}>{dominantWeeklyMove?.type ?? "n/a"}</em>
-              <small>
-                {dominantWeeklyMove ? `${formatBps(dominantWeeklyMove.spreadDeltaBps)} vs ${formatShortDate(dominantWeeklyMove.comparisonDate)}` : "Insufficient data"}
-              </small>
-            </div>
-            <div className="curve-movement-card">
-              <span>Dominant 1M move</span>
-              <strong>{curveMovement.dominantMonthly?.pair.label ?? "n/a"}</strong>
-              <em className={curveMoveBadgeClass(dominantMonthlyMove?.type)}>{dominantMonthlyMove?.type ?? "n/a"}</em>
-              <small>
-                {dominantMonthlyMove ? `${formatBps(dominantMonthlyMove.spreadDeltaBps)} vs ${formatShortDate(dominantMonthlyMove.comparisonDate)}` : "Insufficient data"}
-              </small>
-            </div>
-            <div className="curve-movement-card curve-movement-card--scenario">
-              <span>{currentYearEndScenario?.confidence ?? "Low"} confidence current scenario</span>
-              <strong>{currentYearEndScenario?.title ?? "Year-end scenario unavailable"}</strong>
-              <small>{currentYearEndScenario?.description ?? "Current curve data is not sufficient to form a year-end scenario."}</small>
-            </div>
-          </div>
-
-          <div className="curve-movement-table-wrap">
-            <table className="curve-movement-table">
-              <thead>
-                <tr>
-                  <th>Segment</th>
-                  <th>Current spread</th>
-                  <th>1W tenor Δ</th>
-                  <th>1W spread Δ</th>
-                  <th>1W type</th>
-                  <th>1M tenor Δ</th>
-                  <th>1M spread Δ</th>
-                  <th>1M type</th>
-                  <th>Economic read</th>
-                </tr>
-              </thead>
-              <tbody>
-                {curveMovement.pairs.map((row) => (
-                  <tr key={row.pair.key}>
-                    <th>{row.pair.label}</th>
-                    <td>{formatSpreadLevel(row.currentSpreadBps)}</td>
-                    <td>{formatMoveLegs(row.weekly, row.pair.shortKey, row.pair.longKey)}</td>
-                    <td>{formatBps(row.weekly?.spreadDeltaBps)}</td>
-                    <td>
-                      <span className={curveMoveBadgeClass(row.weekly?.type)}>{row.weekly?.type ?? "n/a"}</span>
-                    </td>
-                    <td>{formatMoveLegs(row.monthly, row.pair.shortKey, row.pair.longKey)}</td>
-                    <td>{formatBps(row.monthly?.spreadDeltaBps)}</td>
-                    <td>
-                      <span className={curveMoveBadgeClass(row.monthly?.type)}>{row.monthly?.type ?? "n/a"}</span>
-                    </td>
-                    <td>{row.monthly?.rationale ?? row.weekly?.rationale ?? "Insufficient observations for this segment."}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="source-footnote source-footnote--inline">
-            <span>Six curve segments use all pair combinations from 2Y, 5Y, 10Y, and 30Y Treasury yields.</span>
-            <span>Weekly and monthly classifications are computed as of the selected range-end date.</span>
-            <span>{currentYearEndScenario?.caveat ?? "Scenario analysis only; this is not a point forecast or investment recommendation."}</span>
-          </div>
-        </article>
-      ) : null}
-
       {hasSelectedRows ? (
         <div className="research-grid">
           <article className="panel research-chart-panel research-chart-panel--wide">
@@ -548,6 +471,94 @@ export function ResearchWorkbench() {
           No valid Treasury observations are available inside the selected date window.
         </div>
       )}
+
+      {curveMovement ? (
+        <article className="panel curve-movement-panel">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">Curve movement decomposition</p>
+              <h3>Steepening, Flattening, and Parallel Shift Analysis</h3>
+            </div>
+            <span className="panel__meta">
+              Range-end complete curve {curveMovement.latestDate ? formatDate(curveMovement.latestDate) : "n/a"}
+            </span>
+          </div>
+
+          <div className="curve-movement-kpis">
+            <div className="curve-movement-card">
+              <span>Dominant 1W move</span>
+              <strong>{curveMovement.dominantWeekly?.pair.label ?? "n/a"}</strong>
+              <em className={curveMoveBadgeClass(dominantWeeklyMove?.type)}>{dominantWeeklyMove?.type ?? "n/a"}</em>
+              <small>
+                {dominantWeeklyMove ? `${formatBps(dominantWeeklyMove.spreadDeltaBps)} vs ${formatShortDate(dominantWeeklyMove.comparisonDate)}` : "Insufficient data"}
+              </small>
+            </div>
+            <div className="curve-movement-card">
+              <span>Dominant 1M move</span>
+              <strong>{curveMovement.dominantMonthly?.pair.label ?? "n/a"}</strong>
+              <em className={curveMoveBadgeClass(dominantMonthlyMove?.type)}>{dominantMonthlyMove?.type ?? "n/a"}</em>
+              <small>
+                {dominantMonthlyMove ? `${formatBps(dominantMonthlyMove.spreadDeltaBps)} vs ${formatShortDate(dominantMonthlyMove.comparisonDate)}` : "Insufficient data"}
+              </small>
+            </div>
+            <div className="curve-movement-card curve-movement-card--scenario">
+              <span>
+                {currentYearEndScenario?.confidence ?? "Low"} confidence latest-curve scenario
+                {currentCurveMovement?.latestDate ? ` · ${formatShortDate(currentCurveMovement.latestDate)}` : ""}
+              </span>
+              <strong>{currentYearEndScenario?.title ?? "Year-end scenario unavailable"}</strong>
+              <small>{currentYearEndScenario?.description ?? "Current curve data is not sufficient to form a year-end scenario."}</small>
+            </div>
+          </div>
+
+          <div className="curve-movement-table-wrap">
+            <table className="curve-movement-table">
+              <thead>
+                <tr>
+                  <th>Segment</th>
+                  <th>Range-end spread</th>
+                  <th>1W tenor Δ</th>
+                  <th>1W spread Δ</th>
+                  <th>1W type</th>
+                  <th>1M tenor Δ</th>
+                  <th>1M spread Δ</th>
+                  <th>1M type</th>
+                  <th>Economic read</th>
+                </tr>
+              </thead>
+              <tbody>
+                {curveMovement.pairs.map((row) => (
+                  <tr key={row.pair.key}>
+                    <th>{row.pair.label}</th>
+                    <td>{formatSpreadLevel(row.currentSpreadBps)}</td>
+                    <td>{formatMoveLegs(row.weekly, row.pair.shortKey, row.pair.longKey)}</td>
+                    <td>{formatBps(row.weekly?.spreadDeltaBps)}</td>
+                    <td>
+                      <span className={curveMoveBadgeClass(row.weekly?.type)}>{row.weekly?.type ?? "n/a"}</span>
+                    </td>
+                    <td>{formatMoveLegs(row.monthly, row.pair.shortKey, row.pair.longKey)}</td>
+                    <td>{formatBps(row.monthly?.spreadDeltaBps)}</td>
+                    <td>
+                      <span className={curveMoveBadgeClass(row.monthly?.type)}>{row.monthly?.type ?? "n/a"}</span>
+                    </td>
+                    <td>{row.monthly?.rationale ?? row.weekly?.rationale ?? "Insufficient observations for this segment."}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="source-footnote source-footnote--inline">
+            <span>Six curve segments use all pair combinations from 2Y, 5Y, 10Y, and 30Y Treasury yields.</span>
+            <span>
+              Weekly and monthly classifications are computed as of the selected range-end date using available
+              prior observations, even when the lookback starts before the visible chart window.
+            </span>
+            <span>The year-end scenario card always uses the latest official curve, not a historical custom range.</span>
+            <span>{currentYearEndScenario?.caveat ?? "Scenario analysis only; this is not a point forecast or investment recommendation."}</span>
+          </div>
+        </article>
+      ) : null}
 
       <div className="event-section">
         <div className="section-header section-header--compact">
