@@ -12,12 +12,14 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { CalendarRange, Focus, Info, RotateCcw } from "lucide-react";
+import { CalendarRange, Download, Focus, Info, RotateCcw } from "lucide-react";
 import { LoadingBlock } from "./LoadingBlock";
 import { useHistoricalYields } from "../hooks/useHistoricalYields";
 import { formatBps, formatDate, formatShortDate, formatTimestamp, formatYield } from "../lib/format";
 import {
+  buildCurveMovementAnalysis,
   buildStats,
+  curvePairs,
   eventsInRange,
   filterRowsByRange,
   getEventFocusRange,
@@ -27,7 +29,7 @@ import {
   spreadKeys
 } from "../lib/research";
 import type { HistoricalRow, ResearchMaturityKey, SpreadKey } from "../types";
-import type { MacroEvent, RangePreset } from "../lib/research";
+import type { CurveMoveType, MacroEvent, RangePreset } from "../lib/research";
 
 const rangePresets: Array<Exclude<RangePreset, "CUSTOM">> = ["1Y", "5Y", "10Y", "20Y", "MAX"];
 
@@ -40,9 +42,12 @@ const yieldColors: Record<ResearchMaturityKey, string> = {
 };
 
 const spreadColors: Record<SpreadKey, string> = {
-  "10Y2Y": "var(--series-2y)",
-  "30Y5Y": "var(--series-30y)",
   "5Y2Y": "var(--series-5y)",
+  "10Y2Y": "var(--series-2y)",
+  "30Y2Y": "var(--series-30y)",
+  "10Y5Y": "var(--series-10y)",
+  "30Y5Y": "var(--series-30y)",
+  "30Y10Y": "var(--series-30y)",
   "10Y3M": "var(--series-10y)"
 };
 
@@ -103,6 +108,30 @@ const formatStat = (
 
 const eventClass = (event: MacroEvent) => `event-card event-card--${event.category.toLowerCase()}`;
 
+const formatSpreadLevel = (value: number | null | undefined) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return "n/a";
+  return `${value.toFixed(1)} bps`;
+};
+
+const curveMoveTone = (type?: CurveMoveType) => {
+  if (!type) return "neutral";
+  if (type.includes("steepening")) return "steepening";
+  if (type.includes("flattening")) return "flattening";
+  if (type.includes("higher")) return "higher";
+  return "lower";
+};
+
+const curveMoveBadgeClass = (type?: CurveMoveType) => `curve-move-badge curve-move-badge--${curveMoveTone(type)}`;
+
+const csvEscape = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
+
+const csvNumber = (value: number | null | undefined) =>
+  value === null || value === undefined || Number.isNaN(value) ? "" : value.toFixed(3);
+
 export function ResearchWorkbench() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [shouldLoadHistory, setShouldLoadHistory] = useState(false);
@@ -150,6 +179,7 @@ export function ResearchWorkbench() {
   }, [range.end, range.start]);
 
   const stats = useMemo(() => buildStats(selectedRows), [selectedRows]);
+  const curveMovement = useMemo(() => (data?.rows.length ? buildCurveMovementAnalysis(data.rows) : null), [data?.rows]);
 
   const selectedSpreadMeta = data?.spreads.find((spread) => spread.key === selectedSpread);
 
@@ -168,6 +198,34 @@ export function ResearchWorkbench() {
   const onCustomDateChange = (field: "start" | "end", value: string) => {
     setPreset("CUSTOM");
     setRange((current) => ({ ...current, [field]: value }));
+  };
+
+  const downloadSelectedCurveData = () => {
+    if (!selectedRows.length) return;
+
+    const headers = ["date", "2Y", "5Y", "10Y", "30Y", ...curvePairs.map((pair) => pair.label)];
+    const body = selectedRows.map((row) => [
+      row.date,
+      csvNumber(row["2Y"]),
+      csvNumber(row["5Y"]),
+      csvNumber(row["10Y"]),
+      csvNumber(row["30Y"]),
+      ...curvePairs.map((pair) => csvNumber(row[pair.key]))
+    ]);
+    const csv = [
+      headers.map(csvEscape).join(","),
+      ...body.map((cells) => cells.map(csvEscape).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `treasury-curve-${range.start || "start"}-${range.end || "end"}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   if (!shouldLoadHistory || isLoading) {
@@ -189,6 +247,8 @@ export function ResearchWorkbench() {
 
   const latestRow = data.rows.at(-1);
   const hasSelectedRows = selectedRows.length > 0;
+  const dominantWeeklyMove = curveMovement?.dominantWeekly?.weekly;
+  const dominantMonthlyMove = curveMovement?.dominantMonthly?.monthly;
 
   return (
     <section className="research-shell" ref={sectionRef}>
@@ -247,8 +307,88 @@ export function ResearchWorkbench() {
             <RotateCcw size={15} aria-hidden="true" />
             Reset
           </button>
+          <button className="text-button" type="button" disabled={!selectedRows.length} onClick={downloadSelectedCurveData}>
+            <Download size={15} aria-hidden="true" />
+            CSV
+          </button>
         </div>
       </div>
+
+      {curveMovement ? (
+        <article className="panel curve-movement-panel">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">Curve movement decomposition</p>
+              <h3>Steepening, Flattening, and Parallel Shift Analysis</h3>
+            </div>
+            <span className="panel__meta">
+              Latest complete curve {curveMovement.latestDate ? formatDate(curveMovement.latestDate) : "n/a"}
+            </span>
+          </div>
+
+          <div className="curve-movement-kpis">
+            <div className="curve-movement-card">
+              <span>Dominant 1W move</span>
+              <strong>{curveMovement.dominantWeekly?.pair.label ?? "n/a"}</strong>
+              <em className={curveMoveBadgeClass(dominantWeeklyMove?.type)}>{dominantWeeklyMove?.type ?? "n/a"}</em>
+              <small>
+                {dominantWeeklyMove ? `${formatBps(dominantWeeklyMove.spreadDeltaBps)} vs ${formatShortDate(dominantWeeklyMove.comparisonDate)}` : "Insufficient data"}
+              </small>
+            </div>
+            <div className="curve-movement-card">
+              <span>Dominant 1M move</span>
+              <strong>{curveMovement.dominantMonthly?.pair.label ?? "n/a"}</strong>
+              <em className={curveMoveBadgeClass(dominantMonthlyMove?.type)}>{dominantMonthlyMove?.type ?? "n/a"}</em>
+              <small>
+                {dominantMonthlyMove ? `${formatBps(dominantMonthlyMove.spreadDeltaBps)} vs ${formatShortDate(dominantMonthlyMove.comparisonDate)}` : "Insufficient data"}
+              </small>
+            </div>
+            <div className="curve-movement-card curve-movement-card--scenario">
+              <span>{curveMovement.yearEndScenario.confidence} confidence scenario</span>
+              <strong>{curveMovement.yearEndScenario.title}</strong>
+              <small>{curveMovement.yearEndScenario.description}</small>
+            </div>
+          </div>
+
+          <div className="curve-movement-table-wrap">
+            <table className="curve-movement-table">
+              <thead>
+                <tr>
+                  <th>Segment</th>
+                  <th>Current spread</th>
+                  <th>1W spread Δ</th>
+                  <th>1W type</th>
+                  <th>1M spread Δ</th>
+                  <th>1M type</th>
+                  <th>Economic read</th>
+                </tr>
+              </thead>
+              <tbody>
+                {curveMovement.pairs.map((row) => (
+                  <tr key={row.pair.key}>
+                    <th>{row.pair.label}</th>
+                    <td>{formatSpreadLevel(row.currentSpreadBps)}</td>
+                    <td>{formatBps(row.weekly?.spreadDeltaBps)}</td>
+                    <td>
+                      <span className={curveMoveBadgeClass(row.weekly?.type)}>{row.weekly?.type ?? "n/a"}</span>
+                    </td>
+                    <td>{formatBps(row.monthly?.spreadDeltaBps)}</td>
+                    <td>
+                      <span className={curveMoveBadgeClass(row.monthly?.type)}>{row.monthly?.type ?? "n/a"}</span>
+                    </td>
+                    <td>{row.monthly?.rationale ?? row.weekly?.rationale ?? "Insufficient observations for this segment."}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="source-footnote source-footnote--inline">
+            <span>Six curve segments use all pair combinations from 2Y, 5Y, 10Y, and 30Y Treasury yields.</span>
+            <span>{curveMovement.yearEndScenario.caveat}</span>
+          </div>
+        </article>
+      ) : null}
 
       {hasSelectedRows ? (
         <div className="research-grid">

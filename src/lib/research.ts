@@ -1,4 +1,4 @@
-import type { HistoricalRow, ResearchMaturityKey, SpreadKey } from "../types";
+import type { CoreCurveSpreadKey, DashboardMaturityKey, HistoricalRow, ResearchMaturityKey, SpreadKey } from "../types";
 
 export type RangePreset = "1Y" | "5Y" | "10Y" | "20Y" | "MAX" | "CUSTOM";
 
@@ -13,7 +13,65 @@ export interface MacroEvent {
 
 export const maturityKeys: ResearchMaturityKey[] = ["2Y", "5Y", "10Y", "30Y"];
 
-export const spreadKeys: SpreadKey[] = ["10Y2Y", "30Y5Y", "5Y2Y", "10Y3M"];
+export const coreCurveSpreadKeys: CoreCurveSpreadKey[] = ["5Y2Y", "10Y2Y", "30Y2Y", "10Y5Y", "30Y5Y", "30Y10Y"];
+
+export const spreadKeys: SpreadKey[] = [...coreCurveSpreadKeys, "10Y3M"];
+
+export type CurveMoveType =
+  | "Bull steepening"
+  | "Bear steepening"
+  | "Bull flattening"
+  | "Bear flattening"
+  | "Parallel shift higher"
+  | "Parallel shift lower";
+
+export interface CurvePair {
+  key: CoreCurveSpreadKey;
+  label: string;
+  longLabel: string;
+  shortKey: DashboardMaturityKey;
+  longKey: DashboardMaturityKey;
+}
+
+export interface CurveMove {
+  comparisonDate: string;
+  shortDeltaBps: number;
+  longDeltaBps: number;
+  spreadDeltaBps: number;
+  levelDeltaBps: number;
+  type: CurveMoveType;
+  rationale: string;
+}
+
+export interface CurvePairAnalysis {
+  pair: CurvePair;
+  currentSpreadBps: number | null;
+  weekly: CurveMove | null;
+  monthly: CurveMove | null;
+}
+
+export interface CurveMovementAnalysis {
+  latestDate: string | null;
+  latestRow: HistoricalRow | null;
+  pairs: CurvePairAnalysis[];
+  dominantWeekly: CurvePairAnalysis | null;
+  dominantMonthly: CurvePairAnalysis | null;
+  yearEndScenario: {
+    title: string;
+    description: string;
+    confidence: "Low" | "Moderate";
+    caveat: string;
+  };
+}
+
+export const curvePairs: CurvePair[] = [
+  { key: "5Y2Y", label: "5Y - 2Y", longLabel: "5Y minus 2Y", shortKey: "2Y", longKey: "5Y" },
+  { key: "10Y2Y", label: "10Y - 2Y", longLabel: "10Y minus 2Y", shortKey: "2Y", longKey: "10Y" },
+  { key: "30Y2Y", label: "30Y - 2Y", longLabel: "30Y minus 2Y", shortKey: "2Y", longKey: "30Y" },
+  { key: "10Y5Y", label: "10Y - 5Y", longLabel: "10Y minus 5Y", shortKey: "5Y", longKey: "10Y" },
+  { key: "30Y5Y", label: "30Y - 5Y", longLabel: "30Y minus 5Y", shortKey: "5Y", longKey: "30Y" },
+  { key: "30Y10Y", label: "30Y - 10Y", longLabel: "30Y minus 10Y", shortKey: "10Y", longKey: "30Y" }
+];
 
 export const macroEvents: MacroEvent[] = [
   {
@@ -29,7 +87,7 @@ export const macroEvents: MacroEvent[] = [
     title: "Black Monday",
     category: "Market",
     startDate: "1987-10-19",
-    description: "Equity market crash and policy liquidity response."
+    description: "Cross-asset risk shock and policy liquidity response."
   },
   {
     id: "fed-1994",
@@ -53,7 +111,7 @@ export const macroEvents: MacroEvent[] = [
     category: "Market",
     startDate: "2000-03-10",
     endDate: "2002-10-09",
-    description: "Equity bubble unwind and early-2000s easing cycle."
+    description: "Growth shock from technology-bubble unwind and early-2000s easing cycle."
   },
   {
     id: "911",
@@ -178,6 +236,12 @@ const addMonths = (date: Date, months: number) => {
   return next;
 };
 
+const addDays = (date: Date, days: number) => {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+};
+
 export const isoToDate = (isoDate: string) => new Date(`${isoDate}T00:00:00Z`);
 
 export const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
@@ -215,6 +279,213 @@ export const eventsInRange = (start: string, end: string) =>
     const eventEnd = event.endDate ?? event.startDate;
     return event.startDate <= end && eventEnd >= start;
   });
+
+const spreadChangeThresholdBps = 3;
+
+const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+
+const hasPairValues = (row: HistoricalRow, pair: CurvePair) => isNumber(row[pair.shortKey]) && isNumber(row[pair.longKey]);
+
+const currentSpreadForPair = (row: HistoricalRow, pair: CurvePair) => {
+  const storedSpread = row[pair.key];
+  if (isNumber(storedSpread)) return storedSpread;
+
+  const longYield = row[pair.longKey];
+  const shortYield = row[pair.shortKey];
+  return isNumber(longYield) && isNumber(shortYield) ? (longYield - shortYield) * 100 : null;
+};
+
+const classifyCurveMove = (spreadDeltaBps: number, levelDeltaBps: number): CurveMoveType => {
+  if (Math.abs(spreadDeltaBps) <= spreadChangeThresholdBps) {
+    return levelDeltaBps >= 0 ? "Parallel shift higher" : "Parallel shift lower";
+  }
+
+  if (spreadDeltaBps > 0) {
+    return levelDeltaBps >= 0 ? "Bear steepening" : "Bull steepening";
+  }
+
+  return levelDeltaBps >= 0 ? "Bear flattening" : "Bull flattening";
+};
+
+const movementRationale = (type: CurveMoveType, pair: CurvePair) => {
+  const segment = `${pair.longKey}/${pair.shortKey}`;
+
+  switch (type) {
+    case "Bear steepening":
+      return `${segment} steepened because the long tenor rose relative to the front tenor. This usually points to inflation, term-premium, duration-supply, or long-run policy repricing pressure.`;
+    case "Bull steepening":
+      return `${segment} steepened while the average yield level fell. This usually points to front-end rallying faster as policy-cut or growth-risk expectations move lower.`;
+    case "Bear flattening":
+      return `${segment} flattened while the average yield level rose. This usually points to the front tenor selling off more as near-term policy expectations tighten.`;
+    case "Bull flattening":
+      return `${segment} flattened while the average yield level fell. This usually points to stronger long-end demand, lower long-run growth/inflation expectations, or risk-off duration buying.`;
+    case "Parallel shift higher":
+      return `${segment} moved mostly in parallel with yields higher. Curve shape changed little; the main signal is a broad upward repricing in rates.`;
+    case "Parallel shift lower":
+      return `${segment} moved mostly in parallel with yields lower. Curve shape changed little; the main signal is a broad rates rally.`;
+  }
+};
+
+const buildMoveForPair = (rows: HistoricalRow[], latest: HistoricalRow, pair: CurvePair, targetDate: string): CurveMove | null => {
+  const currentLong = latest[pair.longKey];
+  const currentShort = latest[pair.shortKey];
+  const currentSpread = currentSpreadForPair(latest, pair);
+
+  if (!isNumber(currentLong) || !isNumber(currentShort) || !isNumber(currentSpread)) return null;
+
+  const prior = [...rows]
+    .reverse()
+    .find((row) => row.date <= targetDate && hasPairValues(row, pair));
+
+  if (!prior) return null;
+
+  const priorLong = prior[pair.longKey];
+  const priorShort = prior[pair.shortKey];
+  const priorSpread = currentSpreadForPair(prior, pair);
+
+  if (!isNumber(priorLong) || !isNumber(priorShort) || !isNumber(priorSpread)) return null;
+
+  const longDeltaBps = (currentLong - priorLong) * 100;
+  const shortDeltaBps = (currentShort - priorShort) * 100;
+  const spreadDeltaBps = currentSpread - priorSpread;
+  const levelDeltaBps = (longDeltaBps + shortDeltaBps) / 2;
+  const type = classifyCurveMove(spreadDeltaBps, levelDeltaBps);
+
+  return {
+    comparisonDate: prior.date,
+    shortDeltaBps,
+    longDeltaBps,
+    spreadDeltaBps,
+    levelDeltaBps,
+    type,
+    rationale: movementRationale(type, pair)
+  };
+};
+
+const mostActivePair = (pairs: CurvePairAnalysis[], horizon: "weekly" | "monthly") =>
+  pairs.reduce<CurvePairAnalysis | null>((current, pair) => {
+    const move = pair[horizon];
+    if (!move) return current;
+    if (!current?.[horizon]) return pair;
+    return Math.abs(move.spreadDeltaBps) > Math.abs(current[horizon].spreadDeltaBps) ? pair : current;
+  }, null);
+
+const buildYearEndScenario = (pairs: CurvePairAnalysis[], latestDate: string | null): CurveMovementAnalysis["yearEndScenario"] => {
+  const tensTwos = pairs.find((pair) => pair.pair.key === "10Y2Y");
+  const fivesTwos = pairs.find((pair) => pair.pair.key === "5Y2Y");
+  const thirtiesFives = pairs.find((pair) => pair.pair.key === "30Y5Y");
+  const current10Y2Y = tensTwos?.currentSpreadBps;
+  const monthly10Y2Y = tensTwos?.monthly?.spreadDeltaBps;
+  const monthly5Y2Y = fivesTwos?.monthly?.spreadDeltaBps;
+  const monthly30Y5Y = thirtiesFives?.monthly?.spreadDeltaBps;
+
+  if (!isNumber(current10Y2Y) || !isNumber(monthly10Y2Y)) {
+    return {
+      title: "Year-end scenario: insufficient curve history",
+      description:
+        "The dashboard needs valid 2Y, 5Y, 10Y, and 30Y observations before it can form a rule-based year-end curve scenario.",
+      confidence: "Low",
+      caveat: "Scenario analysis only; this is not a point forecast or investment recommendation."
+    };
+  }
+
+  const frontEndConfirmation = isNumber(monthly5Y2Y) ? monthly5Y2Y : monthly10Y2Y;
+  const longEndConfirmation = isNumber(monthly30Y5Y) ? monthly30Y5Y : monthly10Y2Y;
+  const curveState =
+    current10Y2Y < -10 ? "inverted" : current10Y2Y <= 10 ? "near flat" : "positively sloped";
+  const broadSteepening = monthly10Y2Y > 5 && frontEndConfirmation > 0;
+  const broadFlattening = monthly10Y2Y < -5 && frontEndConfirmation < 0;
+  const longEndSteepening = longEndConfirmation > 5;
+
+  if (broadSteepening && current10Y2Y < 0) {
+    return {
+      title: "Year-end scenario: de-inversion / gradual steepening bias",
+      description: `As of ${latestDate ?? "the latest observation"}, 10Y-2Y is ${current10Y2Y.toFixed(
+        1
+      )} bps and has steepened ${monthly10Y2Y.toFixed(
+        1
+      )} bps over roughly one month. The rule-based read is that the curve has been moving toward de-inversion; if that momentum persists, year-end risk skews toward a less inverted or modestly positive curve.`,
+      confidence: longEndSteepening ? "Moderate" : "Low",
+      caveat:
+        "Scenario analysis only. The path depends on incoming inflation data, Fed reaction function, Treasury supply, and term-premium repricing."
+    };
+  }
+
+  if (broadSteepening) {
+    return {
+      title: "Year-end scenario: additional steepening bias",
+      description: `The curve is currently ${curveState}, and the 10Y-2Y spread widened ${monthly10Y2Y.toFixed(
+        1
+      )} bps over roughly one month. The rule-based read favors continued steepening unless front-end policy expectations or long-end term premium reverse.`,
+      confidence: longEndSteepening ? "Moderate" : "Low",
+      caveat:
+        "Scenario analysis only. This is a curve-shape read from observed Treasury data, not a tradable rate forecast."
+    };
+  }
+
+  if (broadFlattening) {
+    return {
+      title: "Year-end scenario: flattening risk remains active",
+      description: `The curve is currently ${curveState}, and the 10Y-2Y spread narrowed ${Math.abs(monthly10Y2Y).toFixed(
+        1
+      )} bps over roughly one month. The rule-based read is that the curve is still absorbing front-end or policy-rate pressure; year-end steepening would require a reversal in that momentum.`,
+      confidence: "Low",
+      caveat:
+        "Scenario analysis only. The path can change quickly around inflation releases, Fed communication, and long-end auction/term-premium shocks."
+    };
+  }
+
+  return {
+    title: "Year-end scenario: range-bound curve bias",
+    description: `The curve is currently ${curveState}, with 10Y-2Y at ${current10Y2Y.toFixed(
+      1
+    )} bps and only ${monthly10Y2Y.toFixed(
+      1
+    )} bps of one-month spread movement. The rule-based read is that curve direction is not yet decisive; year-end shape depends on whether the next dominant impulse comes from front-end Fed expectations or long-end term premium.`,
+    confidence: "Low",
+    caveat: "Scenario analysis only. It should be read as a structured hypothesis, not a point forecast."
+  };
+};
+
+export const buildCurveMovementAnalysis = (rows: HistoricalRow[]): CurveMovementAnalysis => {
+  const latestRow = [...rows].reverse().find((row) => curvePairs.every((pair) => hasPairValues(row, pair))) ?? null;
+  const latestDate = latestRow?.date ?? null;
+
+  if (!latestRow || !latestDate) {
+    return {
+      latestDate,
+      latestRow,
+      pairs: curvePairs.map((pair) => ({
+        pair,
+        currentSpreadBps: null,
+        weekly: null,
+        monthly: null
+      })),
+      dominantWeekly: null,
+      dominantMonthly: null,
+      yearEndScenario: buildYearEndScenario([], latestDate)
+    };
+  }
+
+  const weekTarget = toIsoDate(addDays(isoToDate(latestDate), -7));
+  const monthTarget = toIsoDate(addMonths(isoToDate(latestDate), -1));
+  const rowsBeforeLatest = rows.filter((row) => row.date < latestDate);
+  const pairs = curvePairs.map((pair) => ({
+    pair,
+    currentSpreadBps: currentSpreadForPair(latestRow, pair),
+    weekly: buildMoveForPair(rowsBeforeLatest, latestRow, pair, weekTarget),
+    monthly: buildMoveForPair(rowsBeforeLatest, latestRow, pair, monthTarget)
+  }));
+
+  return {
+    latestDate,
+    latestRow,
+    pairs,
+    dominantWeekly: mostActivePair(pairs, "weekly"),
+    dominantMonthly: mostActivePair(pairs, "monthly"),
+    yearEndScenario: buildYearEndScenario(pairs, latestDate)
+  };
+};
 
 const mean = (values: number[]) => {
   if (!values.length) return null;

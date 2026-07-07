@@ -38,8 +38,11 @@ assert.equal(historical.availability["2Y"].firstDate, "1976-06-01", "2Y history 
 assert.equal(historical.availability["30Y"].firstDate, "1977-02-15", "30Y history should start in 1977");
 
 assertSpread(latestHistoryRow, "10Y2Y", "10Y", "2Y");
+assertSpread(latestHistoryRow, "30Y2Y", "30Y", "2Y");
+assertSpread(latestHistoryRow, "10Y5Y", "10Y", "5Y");
 assertSpread(latestHistoryRow, "30Y5Y", "30Y", "5Y");
 assertSpread(latestHistoryRow, "5Y2Y", "5Y", "2Y");
+assertSpread(latestHistoryRow, "30Y10Y", "30Y", "10Y");
 assertSpread(latestHistoryRow, "10Y3M", "10Y", "3M");
 
 for (const point of treasury.summary) {
@@ -55,9 +58,12 @@ console.log(
       historicalEnd: historical.source.recordEndDate,
       historicalRows: historical.rows.length,
       latestSpreads: {
-        "10Y2Y": latestHistoryRow["10Y2Y"],
-        "30Y5Y": latestHistoryRow["30Y5Y"],
         "5Y2Y": latestHistoryRow["5Y2Y"],
+        "10Y2Y": latestHistoryRow["10Y2Y"],
+        "30Y2Y": latestHistoryRow["30Y2Y"],
+        "10Y5Y": latestHistoryRow["10Y5Y"],
+        "30Y5Y": latestHistoryRow["30Y5Y"],
+        "30Y10Y": latestHistoryRow["30Y10Y"],
         "10Y3M": latestHistoryRow["10Y3M"]
       }
     },
@@ -65,4 +71,3 @@ console.log(
     2
   )
 );
-

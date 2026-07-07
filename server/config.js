@@ -59,8 +59,11 @@ export const HISTORICAL_MATURITIES = [
 ];
 
 export const RESEARCH_SPREADS = [
-  { key: "10Y2Y", label: "10Y - 2Y", longLabel: "10Y minus 2Y", minuend: "10Y", subtrahend: "2Y" },
-  { key: "30Y5Y", label: "30Y - 5Y", longLabel: "30Y minus 5Y", minuend: "30Y", subtrahend: "5Y" },
   { key: "5Y2Y", label: "5Y - 2Y", longLabel: "5Y minus 2Y", minuend: "5Y", subtrahend: "2Y" },
+  { key: "10Y2Y", label: "10Y - 2Y", longLabel: "10Y minus 2Y", minuend: "10Y", subtrahend: "2Y" },
+  { key: "30Y2Y", label: "30Y - 2Y", longLabel: "30Y minus 2Y", minuend: "30Y", subtrahend: "2Y" },
+  { key: "10Y5Y", label: "10Y - 5Y", longLabel: "10Y minus 5Y", minuend: "10Y", subtrahend: "5Y" },
+  { key: "30Y5Y", label: "30Y - 5Y", longLabel: "30Y minus 5Y", minuend: "30Y", subtrahend: "5Y" },
+  { key: "30Y10Y", label: "30Y - 10Y", longLabel: "30Y minus 10Y", minuend: "30Y", subtrahend: "10Y" },
   { key: "10Y3M", label: "10Y - 3M", longLabel: "10Y minus 3M", minuend: "10Y", subtrahend: "3M" }
 ];

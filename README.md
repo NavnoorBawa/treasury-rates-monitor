@@ -1,6 +1,6 @@
 # U.S. Treasury Yield Dashboard
 
-A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates. It displays current 2Y, 5Y, 10Y, and 30Y yields, daily moves in basis points and percent, a yield curve, one-year historical charts, long-run macro regime analysis, source timestamps, and light/dark themes.
+A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates. It displays current 2Y, 5Y, 10Y, and 30Y yields, daily moves in basis points and percent, a yield curve, one-year historical charts, long-run macro regime analysis, weekly/monthly curve movement classification, source timestamps, and light/dark themes.
 
 Live deployment: <https://treasury-yield-dashboard.vercel.app>
 
@@ -29,7 +29,10 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 - Long-run historical data for 2Y, 5Y, 10Y, and 30Y Treasury yields.
 - Date-range presets: 1Y, 5Y, 10Y, 20Y, Max, plus custom start/end dates.
 - Macro event markers with focus windows for major market, policy, crisis, and geopolitical shocks.
-- Yield spread analysis: 10Y-2Y, 30Y-5Y, 5Y-2Y, and 10Y-3M.
+- Yield spread analysis for all six 2Y/5Y/10Y/30Y curve combinations: 5Y-2Y, 10Y-2Y, 30Y-2Y, 10Y-5Y, 30Y-5Y, and 30Y-10Y, plus 10Y-3M as a policy-sensitive curve measure.
+- Weekly and monthly curve movement classification into six types: bull steepening, bear steepening, bull flattening, bear flattening, parallel shift higher, and parallel shift lower.
+- Selected-range CSV export containing dates, 2Y/5Y/10Y/30Y yields, and all six core curve spreads.
+- Rule-based year-end curve scenario analysis using current curve shape and recent spread momentum. This is scenario analysis only, not a point forecast or investment recommendation.
 - Selected-period statistics: latest, min, max, average, annualized daily-change volatility, 1M/3M/1Y changes, percentile rank, and observation count.
 - Light and dark themes for presentation use.
 
@@ -78,7 +81,7 @@ Returns:
 - `summary`: current 2Y, 5Y, 10Y, and 30Y yields plus prior observation, daily bps change, and daily percent change.
 - `curve`: latest official curve points.
 - `history`: one-year historical series for each dashboard maturity.
-- `spreads`: 10Y-2Y and 30Y-5Y curve spreads.
+- `spreads`: 10Y-2Y and 30Y-5Y curve spreads used by the current-market summary.
 - `source`: Treasury source links, latest official record date, previous record date, feed timestamp, and retrieval timestamp.
 - `cache`: cache status (`hit`, `refresh`, or `stale`).
 
@@ -86,7 +89,7 @@ Returns:
 
 Returns:
 
-- `rows`: long-run H.15 daily Treasury constant maturity observations with 3M, 2Y, 5Y, 10Y, 30Y, and computed spread fields.
+- `rows`: long-run H.15 daily Treasury constant maturity observations with 3M, 2Y, 5Y, 10Y, 30Y, and computed spread fields for all six 2Y/5Y/10Y/30Y curve pairs plus 10Y-3M.
 - `maturities`: maturity metadata used by the research charts.
 - `spreads`: spread definitions.
 - `availability`: first/last valid dates and observation counts by maturity.

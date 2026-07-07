@@ -818,6 +818,11 @@ h3 {
   background: var(--surface-panel);
 }
 
+.text-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .research-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.46fr) minmax(360px, 0.58fr);
@@ -862,6 +867,145 @@ h3 {
 .spread-note svg {
   flex: 0 0 auto;
   margin-top: 1px;
+  color: var(--series-2y);
+}
+
+.curve-movement-panel {
+  margin-bottom: 14px;
+}
+
+.curve-movement-kpis {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(360px, 1.6fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.curve-movement-card {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 128px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-raised);
+}
+
+.curve-movement-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.curve-movement-card strong {
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.curve-movement-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.curve-movement-card--scenario {
+  background: color-mix(in srgb, var(--surface-raised) 84%, var(--series-2y));
+}
+
+.curve-movement-table-wrap {
+  width: 100%;
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.curve-movement-table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.curve-movement-table th,
+.curve-movement-table td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.curve-movement-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-panel);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.curve-movement-table th:first-child,
+.curve-movement-table td:first-child {
+  text-align: left;
+}
+
+.curve-movement-table th:first-child {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.curve-movement-table td:last-child {
+  width: 34%;
+  min-width: 360px;
+  color: var(--muted);
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+}
+
+.curve-movement-table tbody tr {
+  transition: background 140ms ease;
+}
+
+.curve-movement-table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-muted) 62%, transparent);
+}
+
+.curve-move-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-panel);
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.curve-move-badge--steepening {
+  border-color: color-mix(in srgb, var(--move-down) 36%, var(--border));
+  color: var(--move-down);
+}
+
+.curve-move-badge--flattening {
+  border-color: color-mix(in srgb, var(--move-up) 36%, var(--border));
+  color: var(--move-up);
+}
+
+.curve-move-badge--higher {
+  border-color: color-mix(in srgb, var(--series-30y) 36%, var(--border));
+  color: var(--series-30y);
+}
+
+.curve-move-badge--lower {
+  border-color: color-mix(in srgb, var(--series-2y) 36%, var(--border));
   color: var(--series-2y);
 }
 
@@ -1051,6 +1195,11 @@ h3 {
   line-height: 1.45;
 }
 
+.source-footnote--inline {
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
 .spin {
   animation: spin 800ms linear infinite;
 }
@@ -1087,7 +1236,12 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .research-grid {
+  .research-grid,
+  .curve-movement-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .source-footnote--inline {
     grid-template-columns: 1fr;
   }
 }
@@ -1211,6 +1365,10 @@ h3 {
 
   .date-controls .text-button {
     width: 100%;
+  }
+
+  .curve-movement-card {
+    min-height: 0;
   }
 
   .research-chart {
