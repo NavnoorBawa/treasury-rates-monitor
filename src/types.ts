@@ -2,8 +2,6 @@ export type DashboardMaturityKey = "2Y" | "5Y" | "10Y" | "30Y";
 
 export type ResearchMaturityKey = DashboardMaturityKey;
 
-export type IntradayMaturityKey = DashboardMaturityKey;
-
 export type CoreCurveSpreadKey = "5Y2Y" | "10Y2Y" | "30Y2Y" | "10Y5Y" | "30Y5Y" | "30Y10Y";
 
 export type SpreadKey = CoreCurveSpreadKey;
@@ -59,51 +57,6 @@ export interface TreasuryPayload {
   curve: CurvePoint[];
   history: Record<DashboardMaturityKey, HistoryPoint[]>;
   spreads: SpreadPoint[];
-  cache: {
-    status: CacheStatus;
-    ttlSeconds: number;
-    warning?: string;
-  };
-}
-
-export interface IntradayQuote {
-  key: IntradayMaturityKey;
-  label: string;
-  cusip: string | null;
-  bidYield: number | null;
-  askYield: number | null;
-  lastYield: number | null;
-  midYield: number | null;
-  priorCloseYield: number | null;
-  sessionChangeBps: number | null;
-  bidAskSpreadBps: number | null;
-  quoteTimestamp: string;
-}
-
-export interface IntradaySeriesRow {
-  timestamp: string;
-  "2Y": number | null;
-  "5Y": number | null;
-  "10Y": number | null;
-  "30Y": number | null;
-}
-
-export interface IntradayPayload {
-  available: boolean;
-  source: {
-    status: "live" | "delayed" | "stale" | "unavailable";
-    name: string;
-    venue: string;
-    instrumentType: string;
-    sessionDate: string | null;
-    asOf: string | null;
-    retrievedAt: string;
-    delayMinutes: number | null;
-    refreshIntervalSeconds: number;
-    reason?: string;
-  };
-  quotes: IntradayQuote[];
-  series: IntradaySeriesRow[];
   cache: {
     status: CacheStatus;
     ttlSeconds: number;

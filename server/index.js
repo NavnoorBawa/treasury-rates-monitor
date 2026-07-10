@@ -3,10 +3,9 @@ import express from "express";
 import helmet from "helmet";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CACHE_TTL_MS, HISTORY_CACHE_TTL_MS, INTRADAY_CACHE_TTL_MS, PORT } from "./config.js";
+import { CACHE_TTL_MS, HISTORY_CACHE_TTL_MS, PORT } from "./config.js";
 import { MemoryCache } from "./cache.js";
 import { getHistoricalYieldData } from "./historicalClient.js";
-import { getIntradayYieldData } from "./intradayClient.js";
 import { getTreasuryYieldData } from "./treasuryClient.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,7 +13,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const cache = new MemoryCache();
 const historyCache = new MemoryCache();
-const intradayCache = new MemoryCache();
 
 app.disable("x-powered-by");
 app.use(compression());
@@ -129,46 +127,6 @@ app.get("/api/history", async (_request, response) => {
     return response.status(503).json({
       error: "Historical Treasury data unavailable",
       message: error instanceof Error ? error.message : "Unknown historical feed error"
-    });
-  }
-});
-
-app.get("/api/intraday", async (_request, response) => {
-  const cached = intradayCache.get();
-
-  if (cached?.isFresh) {
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.json({
-      ...cached.value,
-      cache: { status: "hit", ttlSeconds: Math.round(INTRADAY_CACHE_TTL_MS / 1000) }
-    });
-  }
-
-  try {
-    const data = await getIntradayYieldData();
-    intradayCache.set(data, INTRADAY_CACHE_TTL_MS);
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.json({
-      ...data,
-      cache: { status: "refresh", ttlSeconds: Math.round(INTRADAY_CACHE_TTL_MS / 1000) }
-    });
-  } catch (error) {
-    if (cached?.value?.available) {
-      response.setHeader("Cache-Control", "private, no-store");
-      return response.status(200).json({
-        ...cached.value,
-        source: { ...cached.value.source, status: "stale", retrievedAt: new Date().toISOString() },
-        cache: {
-          status: "stale",
-          ttlSeconds: Math.round(INTRADAY_CACHE_TTL_MS / 1000),
-          warning: "The intraday gateway is unavailable; the last validated quote snapshot is shown."
-        }
-      });
-    }
-
-    return response.status(503).json({
-      error: "Intraday Treasury data unavailable",
-      message: error instanceof Error ? error.message : "Unknown intraday gateway error"
     });
   }
 });

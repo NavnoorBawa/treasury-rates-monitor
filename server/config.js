@@ -4,29 +4,6 @@ export const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS ?? 10 * 60 * 1000);
 
 export const HISTORY_CACHE_TTL_MS = Number(process.env.HISTORY_CACHE_TTL_MS ?? 30 * 60 * 1000);
 
-const intradayCacheTtlMs = Number(process.env.INTRADAY_CACHE_TTL_MS ?? 5 * 1000);
-export const INTRADAY_CACHE_TTL_MS = Number.isFinite(intradayCacheTtlMs) && intradayCacheTtlMs > 0
-  ? intradayCacheTtlMs
-  : 5 * 1000;
-
-export const INTRADAY_GATEWAY_URL = process.env.INTRADAY_GATEWAY_URL?.trim() ?? "";
-
-export const INTRADAY_GATEWAY_TOKEN = process.env.INTRADAY_GATEWAY_TOKEN?.trim() ?? "";
-
-export const INTRADAY_PROVIDER_NAME = process.env.INTRADAY_PROVIDER_NAME?.trim() || "Licensed provider";
-
-export const INTRADAY_VENUE = process.env.INTRADAY_VENUE?.trim() || "U.S. Treasury cash market";
-
-const intradayDelayMinutes = Number(process.env.INTRADAY_DELAY_MINUTES ?? 0);
-export const INTRADAY_DELAY_MINUTES = Number.isFinite(intradayDelayMinutes) && intradayDelayMinutes >= 0
-  ? intradayDelayMinutes
-  : 0;
-
-const intradayRefreshIntervalSeconds = Number(process.env.INTRADAY_REFRESH_INTERVAL_SECONDS ?? 15);
-export const INTRADAY_REFRESH_INTERVAL_SECONDS = Number.isFinite(intradayRefreshIntervalSeconds)
-  ? Math.max(5, intradayRefreshIntervalSeconds)
-  : 15;
-
 export const TREASURY_FEED_URL =
   "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml";
 

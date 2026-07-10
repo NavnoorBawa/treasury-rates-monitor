@@ -7,29 +7,22 @@ Use a two-source architecture:
 1. Official U.S. Department of the Treasury Daily Treasury Interest Rate XML feed for current/latest values.
 2. Official Federal Reserve H.15 Data Download Program Treasury Constant Maturities package for long-run daily historical analysis.
 
-Use a separate optional licensed source for intraday analysis:
-
-3. A redistribution-authorized on-the-run U.S. Treasury cash-market feed, preferably CME BrokerTec or an authorized vendor carrying BrokerTec data.
-
 FRED is credible and professor-friendly as a reference, but it is not the best primary production feed here because it republishes Treasury constant maturity data through the Federal Reserve/FRED ecosystem and can lag the Treasury feed. The Treasury XML feed is the direct publisher for the Daily Treasury Par Yield Curve Rates used in the top current-market dashboard. The Federal Reserve H.15 DDP is the best free official source for long-run historical research because it provides a direct automated CSV package with all Treasury constant maturity observations.
 
 `yfinance` is deliberately not used. It is an interface to Yahoo Finance data, not an official publisher of U.S. Treasury constant-maturity yields, and it is not an appropriate authoritative source for the fixed 2Y, 5Y, 10Y, and 30Y CMT series in this project.
 
-## Intraday Source Decision
+## Intraday Source Review
 
-Intraday on-the-run Treasury yields are not newer observations of the daily CMT series. CMT is an interpolated par curve fixing; an intraday feed represents actively traded benchmark notes and bonds whose coupons, CUSIPs, liquidity, and roll dates matter. The two datasets are therefore displayed in separate workspaces and are not spliced into one time series.
+The public dashboard intentionally omits intraday yields because no reviewed free source meets the required combination of accurate 2Y, 5Y, 10Y, and 30Y cash Treasury coverage, documented methodology, automated access, and public redistribution rights.
 
-CME BrokerTec is the preferred institutional intraday source:
+- Treasury XML, Federal Reserve H.15/FRED, and Alpha Vantage's Treasury endpoint publish daily or lower-frequency CMT observations, not intraday cash-market quotes: https://home.treasury.gov/treasury-daily-interest-rate-xml-feed and https://www.alphavantage.co/documentation/
+- CME BrokerTec is the technically correct continuous source for on-the-run cash Treasuries, but access requires authorized credentials and CME market-data licensing: https://www.cmegroup.com/market-data/browse-data/catalog/brokertec-us-treasuries-on-the-run.html and https://www.cmegroup.com/market-data/license-data.html
+- BrokerTec's transaction-based benchmark yields are calculated four times daily, but the official methodology states that distribution is subject to a CME Information License Agreement: https://www.cmegroup.com/market-data/files/benchmark-administration-brokertec-methodology.pdf
+- FINRA Treasury aggregates describe prior-trading-day activity and do not provide a real-time tenor yield curve: https://www.finra.org/treasuryaggregates
+- Twelve Data lists U.S. Treasury yield symbols, but its free plan is for internal non-display use and its terms require explicit external-display or redistribution rights: https://twelvedata.com/pricing-business and https://twelvedata.com/terms
+- TradingView widgets do not provide an API or export path, and a user subscription does not grant data rights for an independently calculated public dashboard: https://www.tradingview.com/widget-docs/faq/data/
 
-- CME Cash Market WebSocket API documentation exposes bid/ask prices and yields for on-the-run cash Treasuries: https://cmegroupclientsite.atlassian.net/wiki/spaces/EPICSANDBOX/pages/612139019/CME%2BCash%2BMarket%2BWebSocket%2BAPI
-- BrokerTec market-data sessions require authorized credentials: https://www.cmegroup.com/tools-information/webhelp/cme-customer-center/Content/brokertec-market-data.html
-- CME market-data use and redistribution are governed by its information policies and licensing: https://www.cmegroup.com/market-data/license-data/information-policies.html
-
-FINRA Treasury aggregate data is useful for official post-trade activity research but is published for the prior trading day, so it does not solve the intraday quote requirement: https://www.finra.org/treasuryaggregates
-
-TradingView widgets can provide an indicative third-party chart, but TradingView does not offer widget data as an API/export and a user subscription does not grant website redistribution rights. That makes it unsuitable as the production data layer for independently calculated trader analytics: https://www.tradingview.com/widget-docs/faq/data/
-
-The application therefore implements a strict server-side adapter for an authorized gateway and defaults to an unavailable state. It does not scrape web pages, expose provider credentials to the browser, or show synthetic values. Once a license is available, the gateway can maintain the vendor WebSocket and publish the normalized snapshot contract consumed by `/api/intraday`.
+An embedded third-party chart, scraped webpage, Treasury-futures proxy, or delayed retail symbol would weaken the project's data lineage and could mislead users into treating a different instrument as the official CMT curve. The intraday workspace and inactive provider adapter were therefore removed. If redistribution-authorized BrokerTec or equivalent cash-market data is obtained later, it should be added as a clearly separate on-the-run instrument layer and never spliced into the daily CMT history.
 
 ## Sources Compared
 

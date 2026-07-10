@@ -1,6 +1,6 @@
 # U.S. Treasury Yield Dashboard
 
-A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates. It displays current 2Y, 5Y, 10Y, and 30Y yields, daily moves in basis points and percent, six core curve spreads, date-to-date curve comparison, long-run macro research, a licensed-feed-ready on-the-run intraday workspace, and light/dark themes.
+A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates. It displays current 2Y, 5Y, 10Y, and 30Y yields, daily moves in basis points and percent, six core curve spreads, date-to-date curve comparison, long-run macro research, and light/dark themes.
 
 Live deployment: <https://treasury-yield-dashboard.vercel.app>
 
@@ -15,14 +15,6 @@ No API key is required. The server fetches the current New York calendar year pl
 
 Treasury CMTs are official end-of-day values. Treasury derives them from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM ET each business day, so no free official intraday CMT update exists. Faster polling would not make the underlying official curve fresher.
 
-### Intraday Cash Treasury Layer
-
-Intraday movement is a separate instrument and data layer. The dashboard never relabels interpolated daily CMT yields as live and never derives a cash yield from Treasury futures without the deliverable-basket and conversion-factor work required to do so correctly.
-
-The `Intraday` workspace accepts a normalized, server-side feed of current on-the-run 2Y, 5Y, 10Y, and 30Y cash Treasury quotes. It shows bid, ask, midpoint/last, prior-close session change, yield-market width, timestamped session history, a single-maturity prior-close reference, New York time, and explicit live/delayed/stale status. Intraday yields use three-decimal precision; the official daily CMT view retains the source's two-decimal precision.
-
-CME BrokerTec is the preferred institutional source because it is a central electronic cash Treasury venue and exposes on-the-run market data through licensed services. A direct browser connection is deliberately not included: BrokerTec access requires credentials and market-data/redistribution rights. The app instead connects to a server-side licensed gateway and keeps its token out of the frontend. With no authorized gateway configured, the dashboard displays an unavailable state rather than fabricated or scraped intraday values.
-
 FRED was reviewed as a possible primary source because it is academically familiar and reliable. The app intentionally keeps Treasury as primary for current values because Treasury is the direct official publisher of the Daily Treasury Par Yield Curve Rates, while FRED republishes the relevant DGS series from the Federal Reserve/H.15 ecosystem and its official API requires an API key.
 
 For long-run regime analysis, the app also uses the official Federal Reserve H.15 Data Download Program preformatted Treasury Constant Maturities CSV package:
@@ -35,7 +27,7 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 ## Research Features
 
 - Long-run historical data for 2Y, 5Y, 10Y, and 30Y Treasury yields.
-- Trader-style workspace tabs: Market, Intraday, Compare, History, and Regimes. Only the active research view is shown, avoiding the previous stacked-scroll layout.
+- Trader-style workspace tabs: Market, Compare, History, and Regimes. Only the active research view is shown, avoiding the previous stacked-scroll layout.
 - Date-range presets: 1Y, 5Y, 10Y, 20Y, Max, plus custom start/end dates.
 - Six core 2Y/5Y/10Y/30Y curve combinations: 5Y-2Y, 10Y-2Y, 30Y-2Y, 10Y-5Y, 30Y-5Y, and 30Y-10Y.
 - Date-to-date yield curve comparison with custom as-of/reference dates and 1W, 1M, 1Y, and range-start shortcuts.
@@ -72,7 +64,6 @@ Open <http://localhost:4174>. In production, Express serves both `/api/yields` a
 - `npm start`: run the production Express server.
 - `npm run preview`: preview only the Vite build.
 - `npm run verify:data`: fetch official sources and assert current values, history coverage, latest-source merge, and spread calculations.
-- `npm run verify:intraday`: validate the intraday contract, quote precision, prior-close bps calculations, market width, maturity completeness, timestamp ordering, and malformed-feed rejection.
 
 ## Configuration
 
@@ -82,15 +73,6 @@ Optional environment variables:
 - `CACHE_TTL_MS`: backend Treasury data cache duration. Default: `600000`.
 - `HISTORY_WINDOW_DAYS`: lookback window for historical charts. Default: `365`.
 - `HISTORY_CACHE_TTL_MS`: long-run H.15 cache duration. Default: `1800000`.
-- `INTRADAY_GATEWAY_URL`: HTTPS URL of a redistribution-authorized gateway. Localhost HTTP is accepted for development only.
-- `INTRADAY_GATEWAY_TOKEN`: optional bearer token sent only by the Node API.
-- `INTRADAY_PROVIDER_NAME`: licensed provider name shown in the source status.
-- `INTRADAY_VENUE`: venue shown in the source status.
-- `INTRADAY_DELAY_MINUTES`: minimum disclosed delay; the API uses the greater of this value and the gateway-provided delay.
-- `INTRADAY_REFRESH_INTERVAL_SECONDS`: browser polling interval, with a hard minimum of five seconds. Default: `15`.
-- `INTRADAY_CACHE_TTL_MS`: private server snapshot cache. Default: `5000`.
-
-Copy `.env.example` to `.env` for local intraday configuration. `.env*` files are ignored except for the non-secret example.
 
 ## API
 
@@ -116,42 +98,6 @@ Returns:
 - `source`: H.15 source metadata, Treasury supplement status, and limitations note.
 - `cache`: cache status.
 
-`GET /api/intraday`
-
-Returns a normalized on-the-run cash Treasury snapshot. With no licensed gateway configured it returns HTTP 200 with `available: false`, no quotes, and no series. A configured gateway must return:
-
-```json
-{
-  "source": {
-    "asOf": "2026-07-10T14:30:03.000Z",
-    "sessionDate": "2026-07-10",
-    "delayMinutes": 0
-  },
-  "quotes": [
-    {
-      "key": "2Y",
-      "cusip": "91282XXXX",
-      "bidYield": 4.162,
-      "askYield": 4.158,
-      "lastYield": 4.160,
-      "priorCloseYield": 4.200,
-      "quoteTimestamp": "2026-07-10T14:30:03.000Z"
-    }
-  ],
-  "series": [
-    {
-      "timestamp": "2026-07-10T14:30:00.000Z",
-      "2Y": 4.160,
-      "5Y": 4.270,
-      "10Y": 4.540,
-      "30Y": 5.050
-    }
-  ]
-}
-```
-
-`quotes` must contain exactly one entry for each of `2Y`, `5Y`, `10Y`, and `30Y`; the shortened example shows one entry only for readability. The server validates supported tenors, yield bounds, CUSIP shape, timestamps, response size, and row count. It independently computes midpoints, basis-point session changes, and absolute bid/ask yield width instead of trusting gateway calculations.
-
 ## Project Structure
 
 ```text
@@ -159,11 +105,10 @@ server/
   cache.js              In-memory cache
   config.js             Source URLs, maturity definitions, runtime config
   historicalClient.js   Federal Reserve H.15 DDP CSV fetch/parse/normalize logic
-  intradayClient.js     Licensed gateway fetch, validation, and quote normalization
   index.js              Express app, API routes, production static serving
   treasuryClient.js     Treasury XML fetch/parse/normalize logic
 src/
-  components/           Tabbed workspace, current/intraday curves, comparison, charts, and regime timeline
+  components/           Tabbed workspace, curve matrix, comparison, charts, and regime timeline
   hooks/                Data refresh and theme hooks
   lib/                  Formatting, event, range, and statistics utilities
   styles/               Theme tokens and responsive layout
@@ -179,11 +124,10 @@ This project includes:
 - `api/health.js`
 - `api/yields.js`
 - `api/history.js`
-- `api/intraday.js`
 - `vercel.json`
 - `public/robots.txt`, `public/sitemap.xml`, and `public/404.html`
 
-Security headers are configured in `vercel.json` for Vercel and through Helmet for the local Express production server. The official daily and historical views have no required secrets or API keys. Intraday values require optional licensed-gateway environment variables and valid redistribution rights.
+Security headers are configured in `vercel.json` for Vercel and through Helmet for the local Express production server. The app has no required secrets or API keys.
 
 Deploy with:
 
@@ -204,7 +148,6 @@ Recommended settings for Render, Railway, Fly.io, or similar:
 - Build command: `npm ci && npm run build`
 - Start command: `npm start`
 - Health check: `/api/health`
-- Required secrets for official daily/history views: none
-- Optional intraday secret: `INTRADAY_GATEWAY_TOKEN`
+- Required secrets: none
 
 For static-only hosts, keep the backend deployed separately and point the frontend to that API, or use a platform function to proxy Treasury XML requests. The included one-service Express setup is the simplest deployment path.

@@ -21,12 +21,10 @@ import {
   History,
   Info,
   Layers3,
-  Radio,
   RotateCcw
 } from "lucide-react";
 import { CurveMatrix } from "./CurveMatrix";
 import { CurveRegimeTimeline } from "./CurveRegimeTimeline";
-import { IntradayTreasuryPanel } from "./IntradayTreasuryPanel";
 import { LoadingBlock } from "./LoadingBlock";
 import { YieldCurveChart } from "./YieldCurveChart";
 import { YieldCurveComparison } from "./YieldCurveComparison";
@@ -49,14 +47,13 @@ import {
 } from "../lib/research";
 import type { ResearchMaturityKey, SpreadKey, TreasuryPayload } from "../types";
 
-type WorkspaceTab = "snapshot" | "intraday" | "comparison" | "history" | "regimes";
+type WorkspaceTab = "snapshot" | "comparison" | "history" | "regimes";
 type HistoryView = "charts" | "events" | "statistics";
 
 const rangePresets: Array<Exclude<RangePreset, "CUSTOM">> = ["1Y", "5Y", "10Y", "20Y", "MAX"];
 
 const workspaceTabs: Array<{ id: WorkspaceTab; label: string; description: string; icon: typeof ChartNoAxesCombined }> = [
   { id: "snapshot", label: "Market", description: "Official CMT", icon: ChartNoAxesCombined },
-  { id: "intraday", label: "Intraday", description: "On-the-run cash", icon: Radio },
   { id: "comparison", label: "Compare", description: "Date to date", icon: GitCompareArrows },
   { id: "history", label: "History", description: "Rates and events", icon: History },
   { id: "regimes", label: "Regimes", description: "Curve movement", icon: Layers3 }
@@ -167,7 +164,7 @@ interface ResearchWorkbenchProps {
 export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkbenchProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("snapshot");
   const [historyView, setHistoryView] = useState<HistoryView>("charts");
-  const shouldLoadHistory = activeTab === "comparison" || activeTab === "history" || activeTab === "regimes";
+  const shouldLoadHistory = activeTab !== "snapshot";
   const { data, error, isLoading } = useHistoricalYields(shouldLoadHistory);
   const [preset, setPreset] = useState<RangePreset>("10Y");
   const [range, setRange] = useState({ start: "", end: "" });
@@ -480,10 +477,6 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
             <span>Current values are official Treasury CMT par yields, observed near 3:30 PM ET on business days.</span>
             <span>{currentLoading ? "Refreshing current feed" : currentData ? `Official record ${formatDate(currentData.source.recordDate)}` : "Current feed unavailable"}</span>
           </div>
-        </div>
-      ) : activeTab === "intraday" ? (
-        <div id="workspace-panel-intraday" role="tabpanel" aria-labelledby="workspace-tab-intraday" className="workspace-panel workspace-panel--intraday">
-          <IntradayTreasuryPanel onShowDaily={() => setActiveTab("snapshot")} />
         </div>
       ) : isLoading || !data ? (
         <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`}>

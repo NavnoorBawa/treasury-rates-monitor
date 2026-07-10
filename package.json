@@ -9,7 +9,6 @@
     "server": "node --watch server/index.js",
     "build": "tsc -b && vite build",
     "verify:data": "node scripts/verify-data.mjs",
-    "verify:intraday": "node scripts/verify-intraday.mjs",
     "start": "NODE_ENV=production node server/index.js",
     "preview": "vite preview --host 0.0.0.0"
   },
