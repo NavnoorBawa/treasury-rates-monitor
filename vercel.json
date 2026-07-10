@@ -13,7 +13,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src https://www.tradingview-widget.com; img-src 'self' data:; object-src 'none'; script-src 'self' https://s3.tradingview.com; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests"
         },
         {
           "key": "Referrer-Policy",

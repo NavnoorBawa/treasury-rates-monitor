@@ -13,16 +13,16 @@ FRED is credible and professor-friendly as a reference, but it is not the best p
 
 ## Intraday Source Review
 
-The public dashboard intentionally omits intraday yields because no reviewed free source meets the required combination of accurate 2Y, 5Y, 10Y, and 30Y cash Treasury coverage, documented methodology, automated access, and public redistribution rights.
+The dashboard keeps intraday data outside its official analytical dataset because no reviewed free API meets the required combination of accurate 2Y, 5Y, 10Y, and 30Y cash Treasury coverage, documented methodology, automated access, and public redistribution rights. It provides a separate TradingView widget as an on-screen benchmark reference only. TradingView supplies the widget data and attribution; the application does not retrieve, store, transform, export, or use those values in calculations.
 
 - Treasury XML, Federal Reserve H.15/FRED, and Alpha Vantage's Treasury endpoint publish daily or lower-frequency CMT observations, not intraday cash-market quotes: https://home.treasury.gov/treasury-daily-interest-rate-xml-feed and https://www.alphavantage.co/documentation/
 - CME BrokerTec is the technically correct continuous source for on-the-run cash Treasuries, but access requires authorized credentials and CME market-data licensing: https://www.cmegroup.com/market-data/browse-data/catalog/brokertec-us-treasuries-on-the-run.html and https://www.cmegroup.com/market-data/license-data.html
 - BrokerTec's transaction-based benchmark yields are calculated four times daily, but the official methodology states that distribution is subject to a CME Information License Agreement: https://www.cmegroup.com/market-data/files/benchmark-administration-brokertec-methodology.pdf
 - FINRA Treasury aggregates describe prior-trading-day activity and do not provide a real-time tenor yield curve: https://www.finra.org/treasuryaggregates
 - Twelve Data lists U.S. Treasury yield symbols, but its free plan is for internal non-display use and its terms require explicit external-display or redistribution rights: https://twelvedata.com/pricing-business and https://twelvedata.com/terms
-- TradingView widgets do not provide an API or export path, and a user subscription does not grant data rights for an independently calculated public dashboard: https://www.tradingview.com/widget-docs/faq/data/
+- TradingView officially provides free, attributed widgets with built-in market data for public websites, but does not provide an API or export path. This makes the widget suitable for visual intraday reference, not for independently calculated spreads or stored time series: https://www.tradingview.com/widget/ and https://www.tradingview.com/widget-docs/getting-started/
 
-An embedded third-party chart, scraped webpage, Treasury-futures proxy, or delayed retail symbol would weaken the project's data lineage and could mislead users into treating a different instrument as the official CMT curve. The intraday workspace and inactive provider adapter were therefore removed. If redistribution-authorized BrokerTec or equivalent cash-market data is obtained later, it should be added as a clearly separate on-the-run instrument layer and never spliced into the daily CMT history.
+The intraday widget is therefore isolated in a clearly labelled workspace tab and never spliced into the daily CMT history. Scraped webpages, Treasury-futures proxies, and unlicensed APIs remain excluded. If redistribution-authorized BrokerTec or equivalent cash-market data is obtained later, it should replace the display-only widget as a clearly separate on-the-run instrument layer.
 
 ## Sources Compared
 

@@ -61,10 +61,10 @@ function App() {
           : data?.summary.map((point) => <MetricCard key={point.key} point={point} previousRecordDate={data.source.previousRecordDate} />)}
       </section>
 
-      <ResearchWorkbench currentData={data} currentLoading={isLoading || isFetching} />
+      <ResearchWorkbench currentData={data} currentLoading={isLoading || isFetching} theme={theme} />
 
       <footer className="app-footer">
-        <span>Current data: U.S. Treasury XML. Long-run history: Federal Reserve H.15 DDP.</span>
+        <span>Official daily data: U.S. Treasury XML and Federal Reserve H.15 DDP. Intraday reference: TradingView.</span>
         <span>Current values refresh every 15 minutes; historical package refreshes every 30 minutes.</span>
       </footer>
     </main>

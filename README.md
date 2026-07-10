@@ -1,6 +1,6 @@
 # U.S. Treasury Yield Dashboard
 
-A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates. It displays current 2Y, 5Y, 10Y, and 30Y yields, daily moves in basis points and percent, six core curve spreads, date-to-date curve comparison, long-run macro research, and light/dark themes.
+A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates. It displays current 2Y, 5Y, 10Y, and 30Y yields, daily moves in basis points and percent, a separate intraday benchmark reference, six core curve spreads, date-to-date curve comparison, long-run macro research, and light/dark themes.
 
 Live deployment: <https://treasury-yield-dashboard.vercel.app>
 
@@ -26,8 +26,9 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 
 ## Research Features
 
+- A separate TradingView intraday reference for 2Y, 5Y, 10Y, and 30Y U.S. benchmark-bond yields. The embedded chart defaults to five-minute bars and is explicitly excluded from official CMT calculations, statistics, regimes, and exports.
 - Long-run historical data for 2Y, 5Y, 10Y, and 30Y Treasury yields.
-- Trader-style workspace tabs: Market, Compare, History, and Regimes. Only the active research view is shown, avoiding the previous stacked-scroll layout.
+- Trader-style workspace tabs: Market, Intraday, Compare, History, and Regimes. Only the active research view is shown, avoiding the previous stacked-scroll layout.
 - Date-range presets: 1Y, 5Y, 10Y, 20Y, Max, plus custom start/end dates.
 - Six core 2Y/5Y/10Y/30Y curve combinations: 5Y-2Y, 10Y-2Y, 30Y-2Y, 10Y-5Y, 30Y-5Y, and 30Y-10Y.
 - Date-to-date yield curve comparison with custom as-of/reference dates and 1W, 1M, 1Y, and range-start shortcuts.
