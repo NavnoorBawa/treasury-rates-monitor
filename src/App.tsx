@@ -15,16 +15,16 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Institutional rates dashboard</p>
-          <h1>U.S. Treasury Yield Monitor</h1>
+          <p className="eyebrow">Rates / U.S. Treasury</p>
+          <h1>U.S. Treasury Curve Monitor</h1>
           <p className="topbar__subtitle">
-            2Y, 5Y, 10Y, and 30Y Constant Maturity Treasury rates from the official Treasury feed.
+            Official CMT rates, curve spreads, historical regimes, and date-to-date analysis.
           </p>
         </div>
         <div className="topbar__actions">
           <div className={`refresh-pill ${isFetching ? "refresh-pill--active" : ""}`}>
             <span className="refresh-pill__dot" />
-            <span>{data ? `Record ${formatDate(data.source.recordDate)}` : "Connecting"}</span>
+            <span>{data ? `CMT fixing ${formatDate(data.source.recordDate)}` : "Connecting"}</span>
           </div>
           <button className="icon-button" type="button" onClick={() => refetch()} aria-label="Refresh data">
             <RefreshCw size={18} className={isFetching ? "spin" : ""} aria-hidden="true" />
@@ -65,7 +65,7 @@ function App() {
 
       <footer className="app-footer">
         <span>Current data: U.S. Treasury XML. Long-run history: Federal Reserve H.15 DDP.</span>
-        <span>Current values refresh every 15 minutes; historical package refreshes every 30 minutes.</span>
+        <span>The app checks Treasury every 15 minutes; the official CMT fixing publishes once per business day.</span>
       </footer>
     </main>
   );

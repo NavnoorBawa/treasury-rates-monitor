@@ -53,14 +53,14 @@ export function YieldCurveChart({ data, recordDate }: YieldCurveChartProps) {
       </div>
       <div className="curve-chart">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 18, right: 18, bottom: 6, left: -8 }}>
+          <ComposedChart data={data} margin={{ top: 14, right: 10, bottom: 2, left: -12 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
             <XAxis
               dataKey="shortLabel"
               tickLine={false}
               axisLine={false}
-              minTickGap={12}
-              tick={{ fill: "var(--muted)", fontSize: 12 }}
+              interval={0}
+              tick={{ fill: "var(--muted)", fontSize: 11 }}
             />
             <YAxis
               tickLine={false}
