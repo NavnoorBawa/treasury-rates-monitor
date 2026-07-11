@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 export type Theme = "light" | "dark";
 
 const storageKey = "treasury-yield-dashboard-theme";
+const themeColors: Record<Theme, string> = {
+  light: "#f3f5f3",
+  dark: "#0a0d0c"
+};
 
 const getInitialTheme = (): Theme => {
   const stored = window.localStorage.getItem(storageKey);
@@ -17,6 +21,7 @@ export function useTheme() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme]);
     window.localStorage.setItem(storageKey, theme);
   }, [theme]);
 
