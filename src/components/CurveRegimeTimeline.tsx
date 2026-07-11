@@ -79,6 +79,37 @@ const typeColor: Record<CurveMoveType, string> = {
   "Parallel shift lower": "var(--regime-parallel-lower)"
 };
 
+const regimeColorGroups: Array<{
+  label: string;
+  rule: (toleranceBps: number) => string;
+  moves: Array<{ type: CurveMoveType; label: string; direction: string }>;
+}> = [
+  {
+    label: "Steepening",
+    rule: (toleranceBps) => `Slope Δ > +${toleranceBps} bps`,
+    moves: [
+      { type: "Bull steepening", label: "Bull", direction: "Yields lower" },
+      { type: "Bear steepening", label: "Bear", direction: "Yields higher" }
+    ]
+  },
+  {
+    label: "Flattening",
+    rule: (toleranceBps) => `Slope Δ < -${toleranceBps} bps`,
+    moves: [
+      { type: "Bull flattening", label: "Bull", direction: "Yields lower" },
+      { type: "Bear flattening", label: "Bear", direction: "Yields higher" }
+    ]
+  },
+  {
+    label: "Near-parallel",
+    rule: (toleranceBps) => `|Slope Δ| ≤ ${toleranceBps} bps`,
+    moves: [
+      { type: "Parallel shift lower", label: "Lower", direction: "Yields lower" },
+      { type: "Parallel shift higher", label: "Higher", direction: "Yields higher" }
+    ]
+  }
+];
+
 const compactDateTick = (date: string) => {
   const value = new Date(`${date}T00:00:00Z`);
   return new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit", timeZone: "UTC" }).format(value);
@@ -156,11 +187,11 @@ function SpreadTooltip({ active, payload }: SpreadTooltipProps) {
   if (!active || !point || point.spreadBps === null) return null;
 
   return (
-    <div className="chart-tooltip">
+    <div className="chart-tooltip chart-tooltip--regime" style={point.regimeType ? regimeStyle(point.regimeType) : undefined}>
       <span className="chart-tooltip__label">{formatDate(point.date)}</span>
       <div className="chart-tooltip__rows">
         <div className="chart-tooltip__row"><span>Curve spread</span><strong>{point.spreadBps.toFixed(1)} bps</strong></div>
-        {point.regimeType ? <div className="chart-tooltip__row"><span>Completed-period regime</span><strong>{point.regimeType}</strong></div> : null}
+        {point.regimeType ? <div className="chart-tooltip__row"><span>Completed-period regime</span><RegimeBadge type={point.regimeType} /></div> : null}
       </div>
     </div>
   );
@@ -356,7 +387,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
       </div>
 
       <div className="regime-summary">
-        <div className="regime-summary__tile">
+        <div className="regime-summary__tile regime-summary__tile--regime" style={analysisMove ? regimeStyle(analysisMove.type) : undefined}>
           <span>Selected period regime</span>
           {analysisMove ? <RegimeBadge type={analysisMove.type} /> : <strong>n/a</strong>}
           <small>{analysisMove ? `${intervalLabel(analysisMove.comparisonDate, asOfRecordDate)} · slope change ${formatBps(analysisMove.spreadDeltaBps)}` : "Select a valid reference period"}</small>
@@ -386,21 +417,37 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
                 x1={analysisMove.comparisonDate}
                 x2={analysisAsOf.date}
                 fill={typeColor[analysisMove.type]}
-                fillOpacity={0.1}
-                stroke="none"
+                fillOpacity={0.12}
+                stroke={typeColor[analysisMove.type]}
+                strokeOpacity={0.38}
+                strokeDasharray="3 4"
                 ifOverflow="hidden"
               />
             ) : null}
             <Line
               type="linear"
               dataKey="spreadBps"
-              name={pair.label}
-              stroke="var(--chart-curve)"
-              strokeOpacity={0.28}
-              strokeWidth={1.5}
+              name={`${pair.label} outline`}
+              stroke="var(--chart-path-outline)"
+              strokeWidth={5}
               dot={false}
               connectNulls={false}
               isAnimationActive={false}
+              legendType="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Line
+              type="linear"
+              dataKey="spreadBps"
+              name={pair.label}
+              stroke="var(--chart-regime-neutral)"
+              strokeWidth={2.1}
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
             {curveMoveTypes.map((type) => (
               <Line
@@ -409,11 +456,13 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
                 dataKey={regimeSeriesKey(type)}
                 name={type}
                 stroke={typeColor[type]}
-                strokeWidth={2.5}
+                strokeWidth={3}
                 dot={false}
                 connectNulls={false}
                 isAnimationActive={false}
                 legendType="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
             ))}
           </LineChart>
@@ -448,18 +497,34 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
         </div>
       </div>
 
-      <div className="regime-legend" aria-label="Curve movement regime legend">
-        {curveMoveTypes.map((type) => (
-          <span key={type} style={regimeStyle(type)}>
-            <i aria-hidden="true" />
-            {type}
-            <b>{counts[type]}</b>
-          </span>
+      <div className="regime-key" aria-label="Curve movement color key">
+        {regimeColorGroups.map((group) => (
+          <div className="regime-key__group" key={group.label}>
+            <div className="regime-key__heading">
+              <strong>{group.label}</strong>
+              <span>{group.rule(curveMoveShapeToleranceBps[horizon])}</span>
+            </div>
+            <div className="regime-key__moves">
+              {group.moves.map((move) => (
+                <span
+                  className="regime-key__move"
+                  key={move.type}
+                  style={regimeStyle(move.type)}
+                  aria-label={`${move.type}: ${counts[move.type]} completed ${noun} classifications`}
+                  title={move.type}
+                >
+                  <i aria-hidden="true" />
+                  <span><strong>{move.label}</strong><small>{move.direction}</small></span>
+                  <b>{counts[move.type]}</b>
+                </span>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
       {analysisMove ? (
-        <section className="regime-inspector" aria-live="polite">
+        <section className="regime-inspector regime-inspector--coded" style={regimeStyle(analysisMove.type)} aria-live="polite">
           <div className="regime-inspector__heading">
             <div>
               <span>As-of decomposition · {analysisWindowLabel(analysisWindow)}</span>
