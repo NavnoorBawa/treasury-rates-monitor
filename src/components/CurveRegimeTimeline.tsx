@@ -270,6 +270,13 @@ function HelpTip({ label }: { label: string }) {
   );
 }
 
+const setRegimePreview = (control: HTMLButtonElement, type: CurveMoveType | null) => {
+  const panel = control.closest<HTMLElement>(".regime-panel");
+  if (!panel) return;
+  if (type) panel.dataset.hoverRegime = regimeDomKey[type];
+  else delete panel.dataset.hoverRegime;
+};
+
 export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }: CurveRegimeTimelineProps) {
   const timeline = useMemo(
     () => buildCurveRegimeTimeline(rows, pair, startDate, endDate, horizon),
@@ -514,6 +521,10 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
                     aria-label={`${move.type}: ${counts[move.type]} completed ${noun} classifications. ${isPinned ? "Remove filter" : "Isolate regime"}.`}
                     aria-pressed={isPinned}
                     title={`${move.type} · click to isolate`}
+                    onPointerEnter={(event) => setRegimePreview(event.currentTarget, move.type)}
+                    onPointerLeave={(event) => setRegimePreview(event.currentTarget, null)}
+                    onFocus={(event) => setRegimePreview(event.currentTarget, move.type)}
+                    onBlur={(event) => setRegimePreview(event.currentTarget, null)}
                     onClick={() => setPinnedRegime((current) => current === move.type ? null : move.type)}
                   >
                     <span className="regime-key__glyph" aria-hidden="true"><RegimeGlyph type={move.type} size={14} /></span>

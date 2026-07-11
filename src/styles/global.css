@@ -1711,7 +1711,7 @@ h3 {
 }
 
 .regime-inspector__heading small {
-  color: var(--subtle);
+  color: var(--muted);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -1738,7 +1738,7 @@ h3 {
 }
 
 .regime-inspector__metrics dt {
-  color: var(--subtle);
+  color: var(--muted);
   font-size: 10px;
   font-weight: 650;
 }
@@ -3515,37 +3515,37 @@ h3 {
   transition: opacity 120ms ease;
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move:is(:hover, :focus-visible)) .regime-key__move:not(:hover, :focus-visible) {
+.regime-panel:not([data-pinned-regime])[data-hover-regime] .regime-key__move {
   opacity: 0.4;
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move:is(:hover, :focus-visible)) .regime-chart__base-outline {
+.regime-panel:not([data-pinned-regime])[data-hover-regime] .regime-chart__base-outline {
   opacity: 0.45;
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move:is(:hover, :focus-visible)) .regime-chart__base {
+.regime-panel:not([data-pinned-regime])[data-hover-regime] .regime-chart__base {
   opacity: 0.22;
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move:is(:hover, :focus-visible)) .regime-chart__line {
+.regime-panel:not([data-pinned-regime])[data-hover-regime] .regime-chart__line {
   opacity: 0.1;
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move:is(:hover, :focus-visible)) .regime-chart__selection {
+.regime-panel:not([data-pinned-regime])[data-hover-regime] .regime-chart__selection {
   opacity: 0.18;
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move:is(:hover, :focus-visible)) .regime-ribbon__segment {
+.regime-panel:not([data-pinned-regime])[data-hover-regime] .regime-ribbon__segment {
   opacity: 0.16;
   filter: saturate(0.45);
 }
 
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move[data-regime="bull-steepening"]:is(:hover, :focus-visible)) :is(.regime-chart__line--bull-steepening, .regime-chart__selection--bull-steepening, .regime-ribbon__segment[data-regime="bull-steepening"]),
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move[data-regime="bear-steepening"]:is(:hover, :focus-visible)) :is(.regime-chart__line--bear-steepening, .regime-chart__selection--bear-steepening, .regime-ribbon__segment[data-regime="bear-steepening"]),
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move[data-regime="bull-flattening"]:is(:hover, :focus-visible)) :is(.regime-chart__line--bull-flattening, .regime-chart__selection--bull-flattening, .regime-ribbon__segment[data-regime="bull-flattening"]),
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move[data-regime="bear-flattening"]:is(:hover, :focus-visible)) :is(.regime-chart__line--bear-flattening, .regime-chart__selection--bear-flattening, .regime-ribbon__segment[data-regime="bear-flattening"]),
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move[data-regime="parallel-lower"]:is(:hover, :focus-visible)) :is(.regime-chart__line--parallel-lower, .regime-chart__selection--parallel-lower, .regime-ribbon__segment[data-regime="parallel-lower"]),
-.regime-panel:not([data-pinned-regime]):has(.regime-key__move[data-regime="parallel-higher"]:is(:hover, :focus-visible)) :is(.regime-chart__line--parallel-higher, .regime-chart__selection--parallel-higher, .regime-ribbon__segment[data-regime="parallel-higher"]) {
+.regime-panel:not([data-pinned-regime])[data-hover-regime="bull-steepening"] :is(.regime-key__move[data-regime="bull-steepening"], .regime-chart__line--bull-steepening, .regime-chart__selection--bull-steepening, .regime-ribbon__segment[data-regime="bull-steepening"]),
+.regime-panel:not([data-pinned-regime])[data-hover-regime="bear-steepening"] :is(.regime-key__move[data-regime="bear-steepening"], .regime-chart__line--bear-steepening, .regime-chart__selection--bear-steepening, .regime-ribbon__segment[data-regime="bear-steepening"]),
+.regime-panel:not([data-pinned-regime])[data-hover-regime="bull-flattening"] :is(.regime-key__move[data-regime="bull-flattening"], .regime-chart__line--bull-flattening, .regime-chart__selection--bull-flattening, .regime-ribbon__segment[data-regime="bull-flattening"]),
+.regime-panel:not([data-pinned-regime])[data-hover-regime="bear-flattening"] :is(.regime-key__move[data-regime="bear-flattening"], .regime-chart__line--bear-flattening, .regime-chart__selection--bear-flattening, .regime-ribbon__segment[data-regime="bear-flattening"]),
+.regime-panel:not([data-pinned-regime])[data-hover-regime="parallel-lower"] :is(.regime-key__move[data-regime="parallel-lower"], .regime-chart__line--parallel-lower, .regime-chart__selection--parallel-lower, .regime-ribbon__segment[data-regime="parallel-lower"]),
+.regime-panel:not([data-pinned-regime])[data-hover-regime="parallel-higher"] :is(.regime-key__move[data-regime="parallel-higher"], .regime-chart__line--parallel-higher, .regime-chart__selection--parallel-higher, .regime-ribbon__segment[data-regime="parallel-higher"]) {
   opacity: 1;
   filter: none;
 }
@@ -3580,7 +3580,7 @@ h3 {
 
 .regime-key__move small {
   overflow: hidden;
-  color: var(--subtle);
+  color: var(--muted);
   font-size: 8px;
   font-weight: 580;
   line-height: 1.15;

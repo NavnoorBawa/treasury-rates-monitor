@@ -634,6 +634,9 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
           );
         })}
       </div>
+      {workspaceTabs
+        .filter((tab) => tab.id !== activeTab)
+        .map((tab) => <div key={tab.id} id={`workspace-panel-${tab.id}`} role="tabpanel" aria-labelledby={`workspace-tab-${tab.id}`} hidden />)}
 
       {activeTab === "snapshot" ? (
         <div id="workspace-panel-snapshot" role="tabpanel" aria-labelledby="workspace-tab-snapshot" tabIndex={0} className="workspace-panel workspace-panel--snapshot">
@@ -707,6 +710,9 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
                   </button>
                 ))}
               </div>
+              {historyViews
+                .filter((view) => view.id !== historyView)
+                .map((view) => <div key={view.id} id={`history-view-panel-${view.id}`} role="tabpanel" aria-labelledby={`history-view-tab-${view.id}`} hidden />)}
               <div id={`history-view-panel-${historyView}`} role="tabpanel" aria-labelledby={`history-view-tab-${historyView}`} tabIndex={0}>
                 {historyView === "charts" ? renderHistoryCharts() : historyView === "events" ? renderEvents() : renderStatistics()}
               </div>

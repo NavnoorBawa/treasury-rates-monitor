@@ -132,6 +132,7 @@ app.get("/api/history", async (_request, response) => {
 });
 
 const distPath = path.resolve(__dirname, "..", "dist");
+app.use("/assets", express.static(path.join(distPath, "assets"), { immutable: true, maxAge: "1y" }));
 app.use(express.static(distPath));
 
 app.use((_request, response) => {
