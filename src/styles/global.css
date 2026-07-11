@@ -309,6 +309,17 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.metric-grid__empty {
+  grid-column: 1 / -1;
+  display: grid;
+  min-height: 88px;
+  place-items: center;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 620;
+}
+
 .metric-card {
   position: relative;
   overflow: hidden;
@@ -2773,8 +2784,14 @@ h3 {
 }
 
 .stats-table {
+  min-width: 1120px;
   font-family: var(--font-number);
   font-size: 11px;
+}
+
+.stats-table abbr {
+  cursor: help;
+  text-decoration: none;
 }
 
 .stats-table th,

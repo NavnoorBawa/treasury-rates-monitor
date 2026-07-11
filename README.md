@@ -13,7 +13,7 @@ The backend reads the official U.S. Treasury XML feed for Daily Treasury Par Yie
 
 No API key is required. The server fetches the current New York calendar year plus the prior year, normalizes the XML, computes daily changes against the previous Treasury observation, and caches the result for 10 minutes by default. The frontend refreshes automatically every 15 minutes while open.
 
-Treasury CMTs are official end-of-day values. Treasury derives them from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM ET each business day, so no free official intraday CMT update exists. Faster polling would not make the underlying official curve fresher.
+Treasury CMTs are official daily par-yield observations, not transaction prices or an intraday fixing. Treasury derives them from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM ET each trading day and usually publishes them by 6:00 PM ET, so no free official intraday CMT update exists. Faster polling would not make the underlying official curve fresher.
 
 FRED was reviewed as a possible primary source because it is academically familiar and reliable. The app intentionally keeps Treasury as primary for current values because Treasury is the direct official publisher of the Daily Treasury Par Yield Curve Rates, while FRED republishes the relevant DGS series from the Federal Reserve/H.15 ecosystem and its official API requires an API key.
 
@@ -33,11 +33,11 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 - Date-to-date yield curve comparison with custom as-of/reference dates and 1W, 1M, 1Y, and range-start shortcuts.
 - Macro event markers with focus actions that apply the event window and return directly to the rates/spreads view.
 - A weekly or monthly color-coded curve-regime ribbon for each of the six segments. Classifications use non-overlapping completed calendar intervals, while the daily spread remains a separate line. The six classifications are bull steepening, bear steepening, bull flattening, bear flattening, parallel shift higher, and parallel shift lower. Near-parallel uses a disclosed 3 bps weekly or 5 bps monthly slope tolerance; open periods remain unclassified.
-- Selected-range CSV export containing dates, 2Y/5Y/10Y/30Y yields, and all six core curve spreads.
-- Selected-period statistics: latest, min, max, average, annualized daily-change volatility, 1M/3M/1Y changes, empirical percentile rank, and observation count. Momentum changes use the nearest valid observation on or before the calendar lookback even when it predates the visible range.
+- Selected-range CSV export containing dates, 2Y/5Y/10Y/30Y yields in percent per annum, and all six core curve spreads in basis points; every exported column declares its unit.
+- Selected-period statistics: last valid observation and date, min, max, average, annualized daily-change volatility, 1M/3M/1Y changes, last-value empirical CDF, and valid observation count. Lookback changes use the nearest valid observation on or before the calendar target even when it predates the visible range.
 - Light and dark themes for presentation use.
 
-Historical charts use observed business-day data only. Weekends, federal market holidays, and source-level `ND` observations are not imputed. Treasury stopped issuing the 30Y on February 18, 2002 and resumed publication of the observed 30Y CMT on February 9, 2006; the dashboard explicitly preserves February 18, 2002 through February 8, 2006 as unavailable rather than treating H.15's interim estimated values as observed 30Y quotations. Dependent 30Y spreads are consequently unavailable for that interval. A methodology marker identifies Treasury's December 6, 2021 shift from quasi-cubic Hermite to monotone-convex curve construction; both regimes remain official, but long-run comparisons should recognize the change.
+Historical charts use observed business-day data only. Weekends, market holidays, and source-level `ND` observations are not imputed. Treasury ceased publication of the 30Y CMT on February 18, 2002 and resumed it on February 9, 2006; the dashboard explicitly preserves February 18, 2002 through February 8, 2006 as unavailable rather than treating H.15's interim estimated values as observed 30Y quotations. Dependent 30Y spreads are consequently unavailable for that interval. A methodology marker identifies Treasury's December 6, 2021 shift from quasi-cubic Hermite to monotone-convex curve construction; both regimes remain official, but long-run comparisons should recognize the change.
 
 ## Quick Start
 
@@ -64,6 +64,8 @@ Open <http://localhost:4174>. In production, Express serves both `/api/yields` a
 - `npm start`: run the production Express server.
 - `npm run preview`: preview only the Vite build.
 - `npm run verify:data`: fetch official sources and assert current values, history coverage, latest-source merge, and spread calculations.
+- `npm run verify:research`: verify all six curve classifications, completed-period handling, selected-window statistics, and unit-explicit CSV output.
+- `npm run verify`: run the production build plus research and official-data verification suites.
 
 ## Configuration
 
@@ -84,7 +86,7 @@ Returns:
 - `curve`: latest official curve points.
 - `history`: one-year historical series for each dashboard maturity.
 - `spreads`: all six current 2Y/5Y/10Y/30Y curve spreads with daily basis-point changes.
-- `source`: Treasury source links, latest official record date, previous record date, feed timestamp, and retrieval timestamp.
+- `source`: Treasury source links, latest official record date, previous record date, raw feed-metadata timestamp, and application retrieval timestamp. The interface displays retrieval time rather than presenting Atom metadata as a market observation time.
 - `cache`: cache status (`hit`, `refresh`, or `stale`).
 
 `GET /api/history`

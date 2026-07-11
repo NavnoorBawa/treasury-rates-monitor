@@ -77,6 +77,11 @@ const parseFedCsv = (csv) => {
 
   const headers = records[headerIndex];
   const fieldIndex = new Map(headers.map((field, index) => [field, index]));
+  const missingFields = HISTORICAL_MATURITIES.filter((maturity) => !fieldIndex.has(maturity.field));
+
+  if (missingFields.length) {
+    throw new Error(`Federal Reserve H.15 CSV is missing required series: ${missingFields.map((maturity) => maturity.key).join(", ")}`);
+  }
 
   const rows = records
     .slice(headerIndex + 1)

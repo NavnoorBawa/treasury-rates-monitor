@@ -9,6 +9,8 @@
     "server": "node --watch server/index.js",
     "build": "tsc -b && vite build",
     "verify:data": "node scripts/verify-data.mjs",
+    "verify:research": "node --no-warnings --experimental-strip-types --experimental-specifier-resolution=node scripts/verify-research.mjs",
+    "verify": "npm run build && npm run verify:research && npm run verify:data",
     "start": "NODE_ENV=production node server/index.js",
     "preview": "vite preview --host 0.0.0.0"
   },

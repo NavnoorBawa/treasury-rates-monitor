@@ -92,7 +92,7 @@ export function YieldCurveComparison({
         <CalendarRange size={16} aria-hidden="true" />
         <label>
           <span>As of</span>
-          <input type="date" value={asOfDate} min={rows[0]?.date} max={rows.at(-1)?.date} onChange={(event) => onAsOfDateChange(event.target.value)} />
+          <input type="date" value={asOfDate} min={rows[0]?.date} max={rows.at(-1)?.date} onChange={(event) => onAsOfDateChange(event.target.value)} onInput={(event) => onAsOfDateChange(event.currentTarget.value)} />
         </label>
         <label>
           <span>Reference</span>
@@ -102,6 +102,7 @@ export function YieldCurveComparison({
             min={rows[0]?.date}
             max={asOfDate || rows.at(-1)?.date}
             onChange={(event) => onReferenceDateChange(event.target.value)}
+            onInput={(event) => onReferenceDateChange(event.currentTarget.value)}
           />
         </label>
       </div>

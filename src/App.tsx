@@ -56,8 +56,8 @@ function App() {
 
       {error ? (
         <section className="notice" role="alert">
-          <strong>Unable to load Treasury data.</strong>
-          <span>{error instanceof Error ? error.message : "Please retry in a moment."}</span>
+          <strong>{data ? "Treasury refresh failed." : "Unable to load Treasury data."}</strong>
+          <span>{data ? `Showing the last loaded official observation. ${error instanceof Error ? error.message : ""}` : error instanceof Error ? error.message : "Please retry in a moment."}</span>
         </section>
       ) : null}
 
@@ -68,17 +68,19 @@ function App() {
         </section>
       ) : null}
 
-      <section className="metric-grid" aria-label="Current Treasury yields">
+      <section className="metric-grid" aria-label="Latest official Treasury CMT yields">
         {isLoading
           ? Array.from({ length: 4 }).map((_, index) => <LoadingBlock key={index} className="metric-card" rows={3} />)
-          : data?.summary.map((point) => <MetricCard key={point.key} point={point} previousRecordDate={data.source.previousRecordDate} />)}
+          : data
+            ? data.summary.map((point) => <MetricCard key={point.key} point={point} previousRecordDate={data.source.previousRecordDate} />)
+            : <div className="metric-grid__empty">Official CMT snapshot unavailable</div>}
       </section>
 
-      <ResearchWorkbench currentData={data} currentLoading={isLoading || isFetching} />
+      <ResearchWorkbench currentData={data} currentLoading={isLoading || isFetching} currentError={error} />
 
       <footer className="app-footer">
-        <span>Current data: U.S. Treasury XML. Long-run history: Federal Reserve H.15 DDP.</span>
-        <span>The app checks Treasury every 15 minutes; Treasury publishes the official CMT curve once per business day.</span>
+        <span>Latest daily data: U.S. Treasury XML. Long-run history: Federal Reserve H.15 DDP.</span>
+        <span>The app checks Treasury every 15 minutes; Treasury publishes one official CMT curve per trading day.</span>
       </footer>
     </main>
   );

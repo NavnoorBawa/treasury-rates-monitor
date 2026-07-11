@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Database, TimerReset } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Clock3, Database } from "lucide-react";
 import { formatBps, formatDate, formatTimestamp } from "../lib/format";
 import type { SpreadPoint, TreasuryPayload } from "../types";
 
@@ -18,7 +18,7 @@ export function CurveMatrix({ data }: CurveMatrixProps) {
         </div>
       </div>
 
-      <div className="curve-matrix" aria-label="Current Treasury curve spreads">
+      <div className="curve-matrix" aria-label="Latest official Treasury curve spreads">
         {data.spreads.map((spread) => {
           const move = direction(spread);
           const Icon = move === "up" ? ArrowUpRight : move === "down" ? ArrowDownRight : ArrowRight;
@@ -42,8 +42,8 @@ export function CurveMatrix({ data }: CurveMatrixProps) {
           CMT observation {formatDate(data.source.recordDate)} · Prior {formatDate(data.source.previousRecordDate)}
         </span>
         <span>
-          <TimerReset size={14} aria-hidden="true" />
-          Feed {formatTimestamp(data.source.feedUpdatedAt)}
+          <Clock3 size={14} aria-hidden="true" />
+          Retrieved {formatTimestamp(data.source.retrievedAt)}
         </span>
       </div>
     </aside>

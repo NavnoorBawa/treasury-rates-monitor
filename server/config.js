@@ -47,7 +47,7 @@ export const HISTORICAL_SOURCE = {
   pageUrl: "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=H15",
   downloadUrl: FED_H15_TREASURY_CMT_URL,
   primaryUse:
-    "Long-run official historical Treasury constant maturity series. Latest current observation is supplemented from Treasury XML when Treasury has a newer official record."
+    "Federal Reserve H.15 publication of long-run Treasury constant maturity series. The latest observation is supplemented from Treasury XML when Treasury has a newer official record."
 };
 
 export const HISTORICAL_MATURITIES = [
@@ -57,8 +57,8 @@ export const HISTORICAL_MATURITIES = [
   { key: "30Y", label: "30 Year", shortLabel: "30Y", field: "RIFLGFCY30_N.B", years: 30 }
 ];
 
-// Treasury stopped issuing the 30-year bond on February 18, 2002 and resumed
-// publication of the 30-year CMT on February 9, 2006. H.15 exposes values in
+// Treasury ceased publication of the 30-year CMT on February 18, 2002 and
+// resumed it on February 9, 2006. H.15 exposes values in
 // this interval, but they are not observed 30-year CMT quotations. Keep the
 // research dataset strictly observed by leaving this interval unavailable.
 export const HISTORICAL_30Y_UNAVAILABLE_START = "2002-02-18";

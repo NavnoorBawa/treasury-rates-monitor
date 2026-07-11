@@ -29,7 +29,7 @@ export function MetricCard({ point, previousRecordDate }: MetricCardProps) {
         >
           {formatPct(point.changePct)}
         </span>
-        <small className="metric-card__change-context">vs {formatDate(previousRecordDate)} CMT</small>
+        <small className="metric-card__change-context">vs {formatDate(previousRecordDate)} observation</small>
       </div>
     </article>
   );

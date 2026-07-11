@@ -3,8 +3,9 @@ import type { HistoricalPayload } from "../types";
 
 const REFRESH_INTERVAL_MS = 30 * 60 * 1000;
 
-const fetchHistoricalYields = async (): Promise<HistoricalPayload> => {
+const fetchHistoricalYields = async (signal?: AbortSignal): Promise<HistoricalPayload> => {
   const response = await fetch("/api/history", {
+    signal,
     headers: {
       Accept: "application/json"
     }
@@ -22,7 +23,7 @@ const fetchHistoricalYields = async (): Promise<HistoricalPayload> => {
 export function useHistoricalYields(enabled = true) {
   return useQuery({
     queryKey: ["historical-treasury-yields"],
-    queryFn: fetchHistoricalYields,
+    queryFn: ({ signal }) => fetchHistoricalYields(signal),
     enabled,
     refetchInterval: REFRESH_INTERVAL_MS,
     refetchOnWindowFocus: false,

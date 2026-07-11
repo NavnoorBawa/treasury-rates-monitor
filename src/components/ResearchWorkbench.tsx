@@ -32,10 +32,12 @@ import { useHistoricalYields } from "../hooks/useHistoricalYields";
 import { formatBps, formatDate, formatShortDate, formatTimestamp, formatYield } from "../lib/format";
 import {
   buildStats,
+  buildTreasuryCurveCsv,
   curvePairs,
   eventsInRange,
   filterRowsByRange,
   getComparisonTargetDate,
+  getEventMarkerDate,
   getEventFocusRange,
   getPresetRange,
   maturityKeys,
@@ -61,7 +63,7 @@ const workspaceTabs: Array<{ id: WorkspaceTab; label: string; description: strin
 
 const historyViews: Array<{ id: HistoryView; label: string }> = [
   { id: "charts", label: "Rates & spreads" },
-  { id: "events", label: "Event studies" },
+  { id: "events", label: "Event windows" },
   { id: "statistics", label: "Statistics" }
 ];
 
@@ -141,27 +143,19 @@ const formatStat = (value: number | null | undefined, mode: "yield" | "bps" | "s
   if (value === null || value === undefined || Number.isNaN(value)) return "n/a";
   if (mode === "bps") return `${value.toFixed(1)} bps`;
   if (mode === "signedBps") return formatBps(value);
-  if (mode === "pct") return `${value.toFixed(0)}%`;
+  if (mode === "pct") return `${value.toFixed(2)}%`;
   return formatYield(value);
 };
 
 const eventClass = (event: MacroEvent) => `event-card event-card--${event.category.toLowerCase()}`;
 
-const csvEscape = (value: string | number | null | undefined) => {
-  if (value === null || value === undefined) return "";
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-};
-
-const csvNumber = (value: number | null | undefined) =>
-  value === null || value === undefined || Number.isNaN(value) ? "" : value.toFixed(3);
-
 interface ResearchWorkbenchProps {
   currentData?: TreasuryPayload;
   currentLoading: boolean;
+  currentError: Error | null;
 }
 
-export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkbenchProps) {
+export function ResearchWorkbench({ currentData, currentLoading, currentError }: ResearchWorkbenchProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("snapshot");
   const [historyView, setHistoryView] = useState<HistoryView>("charts");
   const shouldLoadHistory = activeTab !== "snapshot";
@@ -199,6 +193,14 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
     return eventsInRange(range.start, range.end);
   }, [range.end, range.start]);
 
+  const chartEventMarkers = useMemo(
+    () => visibleEvents.flatMap((event) => {
+      const markerDate = getEventMarkerDate(event, selectedRows, range.start, range.end);
+      return markerDate ? [{ event, markerDate }] : [];
+    }),
+    [range.end, range.start, selectedRows, visibleEvents]
+  );
+
   const statsReferenceRows = useMemo(() => {
     if (!data?.rows.length || !range.end) return selectedRows;
     return data.rows.filter((row) => row.date <= range.end);
@@ -235,7 +237,19 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
       setComparisonReference(range.start || getComparisonTargetDate(asOf, "1Y"));
       return;
     }
-    setComparisonReference(getComparisonTargetDate(asOf, horizon));
+    const target = getComparisonTargetDate(asOf, horizon);
+    const firstDate = data.rows[0]?.date ?? target;
+    setComparisonReference(target < firstDate ? firstDate : target);
+  };
+
+  const setComparisonAsOfDate = (value: string) => {
+    setComparisonAsOf(value);
+    setComparisonReference((current) => {
+      if (current && current < value) return current;
+      const target = getComparisonTargetDate(value, "1Y");
+      const firstDate = data?.rows[0]?.date ?? target;
+      return target < firstDate ? firstDate : target;
+    });
   };
 
   const handleWorkspaceTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, current: WorkspaceTab) => {
@@ -258,16 +272,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
 
   const downloadSelectedCurveData = () => {
     if (!selectedRows.length) return;
-    const headers = ["date", "2Y", "5Y", "10Y", "30Y", ...curvePairs.map((pair) => pair.label)];
-    const body = selectedRows.map((row) => [
-      row.date,
-      csvNumber(row["2Y"]),
-      csvNumber(row["5Y"]),
-      csvNumber(row["10Y"]),
-      csvNumber(row["30Y"]),
-      ...curvePairs.map((pair) => csvNumber(row[pair.key]))
-    ]);
-    const csv = [headers.map(csvEscape).join(","), ...body.map((cells) => cells.map(csvEscape).join(","))].join("\n");
+    const csv = buildTreasuryCurveCsv(selectedRows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -298,11 +303,11 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
         <CalendarRange size={16} aria-hidden="true" />
         <label>
           <span>From</span>
-          <input type="date" value={range.start} min={data?.source.recordStartDate ?? undefined} max={range.end || data?.source.recordEndDate || undefined} onChange={(event) => onCustomDateChange("start", event.target.value)} />
+          <input type="date" value={range.start} min={data?.source.recordStartDate ?? undefined} max={range.end || data?.source.recordEndDate || undefined} onChange={(event) => onCustomDateChange("start", event.target.value)} onInput={(event) => onCustomDateChange("start", event.currentTarget.value)} />
         </label>
         <label>
           <span>To</span>
-          <input type="date" value={range.end} min={range.start || data?.source.recordStartDate || undefined} max={data?.source.recordEndDate ?? undefined} onChange={(event) => onCustomDateChange("end", event.target.value)} />
+          <input type="date" value={range.end} min={range.start || data?.source.recordStartDate || undefined} max={data?.source.recordEndDate ?? undefined} onChange={(event) => onCustomDateChange("end", event.target.value)} onInput={(event) => onCustomDateChange("end", event.currentTarget.value)} />
         </label>
         <button className="text-button" type="button" onClick={() => setPresetRange("10Y")}>
           <RotateCcw size={15} aria-hidden="true" />
@@ -337,7 +342,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
                 <YAxis tickLine={false} axisLine={false} width={50} domain={["dataMin - 0.35", "dataMax + 0.35"]} tickFormatter={(value) => `${Number(value).toFixed(1)}%`} tick={{ fill: "var(--muted)", fontSize: 12 }} />
                 <Tooltip content={<MultiTooltip unit="yield" />} />
                 <Legend verticalAlign="top" align="right" iconType="plainline" wrapperStyle={{ color: "var(--muted)" }} />
-                {visibleEvents.map((event) => <ReferenceLine key={event.id} x={event.startDate} stroke="var(--event-line)" strokeDasharray="4 6" ifOverflow="extendDomain" />)}
+                {chartEventMarkers.map(({ event, markerDate }) => <ReferenceLine key={event.id} x={markerDate} stroke="var(--event-line)" strokeDasharray="4 6" />)}
                 {maturityKeys.map((key) => <Line key={key} type="linear" dataKey={key} name={key} connectNulls={false} dot={false} stroke={yieldColors[key]} strokeWidth={key === "10Y" ? 2.4 : 1.8} isAnimationActive={false} />)}
               </LineChart>
             </ResponsiveContainer>
@@ -372,7 +377,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
                 </defs>
                 <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
                 <XAxis dataKey="date" minTickGap={32} tickFormatter={compactDateTick} tickLine={false} axisLine={false} tick={{ fill: "var(--muted)", fontSize: 11 }} />
-                <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={(value) => `${Number(value).toFixed(0)}`} tick={{ fill: "var(--muted)", fontSize: 11 }} />
+                <YAxis tickLine={false} axisLine={false} width={66} tickFormatter={(value) => `${Number(value).toFixed(0)} bps`} tick={{ fill: "var(--muted)", fontSize: 11 }} />
                 <Tooltip content={<MultiTooltip unit="bps" />} />
                 <ReferenceLine y={0} stroke="var(--zero-line)" strokeDasharray="4 5" />
                 <Area type="linear" dataKey={selectedSpread} name={selectedSpreadMeta?.label ?? selectedSpread} stroke={spreadColors[selectedSpread]} strokeWidth={2} fill="url(#spread-gradient)" dot={false} isAnimationActive={false} />
@@ -381,7 +386,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
           </div>
           <div className="spread-note">
             <Info size={15} aria-hidden="true" />
-            <span>Spreads are shown in basis points. Values below zero indicate inversion. Business-day observations only; weekends and market holidays are omitted.</span>
+            <span>Spreads are shown in basis points. Values below zero indicate inversion. Observed business days only; weekends and market holidays are omitted.</span>
           </div>
         </article>
       </div>
@@ -392,7 +397,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
     <div className="event-section">
       <div className="section-header section-header--compact">
         <div>
-          <p className="eyebrow">Event study</p>
+          <p className="eyebrow">Event windows</p>
           <h2>Macro and Methodology Markers</h2>
         </div>
         <span>{visibleEvents.length} events in selected window</span>
@@ -416,17 +421,17 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
       <div className="panel__header">
         <div>
           <p className="eyebrow">Selected-period analytics</p>
-          <h3>Yield Statistics and Momentum</h3>
+          <h3>Yield Distribution and Changes</h3>
         </div>
         <span className="panel__meta">Window end {range.end ? formatDate(range.end) : "n/a"} · Retrieved {formatTimestamp(data?.source.retrievedAt)}</span>
       </div>
       <div className="stats-table-wrap">
         <table className="stats-table">
-          <thead><tr><th>Maturity</th><th>Latest</th><th>Min</th><th>Max</th><th>Average</th><th>Ann. vol</th><th>1M Δ</th><th>3M Δ</th><th>1Y Δ</th><th>Empirical pct.</th></tr></thead>
+          <thead><tr><th>Maturity</th><th>Last obs.</th><th>Last date</th><th>Min</th><th>Max</th><th>Average</th><th>Ann. vol</th><th>1M Δ</th><th>3M Δ</th><th>1Y Δ</th><th><abbr title="Empirical cumulative distribution function">Last-value ECDF</abbr></th><th>Obs.</th></tr></thead>
           <tbody>
             {stats.map((row) => (
               <tr key={row.key}>
-                <th>{row.key}</th><td>{formatStat(row.latest)}</td><td>{formatStat(row.min)}</td><td>{formatStat(row.max)}</td><td>{formatStat(row.average)}</td><td>{formatStat(row.annualizedVolBps, "bps")}</td><td>{formatStat(row.oneMonthChangeBps, "signedBps")}</td><td>{formatStat(row.threeMonthChangeBps, "signedBps")}</td><td>{formatStat(row.oneYearChangeBps, "signedBps")}</td><td>{formatStat(row.percentile, "pct")}</td>
+                <th>{row.key}</th><td>{formatStat(row.latest)}</td><td>{formatDate(row.latestObservationDate)}</td><td>{formatStat(row.min)}</td><td>{formatStat(row.max)}</td><td>{formatStat(row.average)}</td><td>{formatStat(row.annualizedVolBps, "bps")}</td><td>{formatStat(row.oneMonthChangeBps, "signedBps")}</td><td>{formatStat(row.threeMonthChangeBps, "signedBps")}</td><td>{formatStat(row.oneYearChangeBps, "signedBps")}</td><td>{formatStat(row.percentile, "pct")}</td><td>{row.observations.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -436,9 +441,10 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
         <span>{data?.source.name}</span>
         <span>{data?.source.supplementalSource}</span>
         <span>{data?.source.note}</span>
-        <span>Observed business days only. Weekend, federal-market-holiday, and source `ND` values are not imputed.</span>
-        <span>Min, max, average, volatility, and empirical percentile use the selected range. 1M, 3M, and 1Y changes use the nearest valid observation on or before each calendar lookback, including an observation just before the visible range; a value is shown only when that observation is within 10 calendar days of the target date.</span>
-        <span>Annualized volatility is the sample standard deviation of business-day yield changes multiplied by sqrt(252).</span>
+        <span>Observed business days only. Weekends, market holidays, and source-level ND values are not imputed.</span>
+        <span>Last obs. is the latest valid maturity value inside the selected window. Last-value ECDF is the share of valid selected observations at or below that value; Obs. is the valid sample count.</span>
+        <span>Min, max, average, volatility, and ECDF use the selected range. 1M, 3M, and 1Y changes use the nearest valid observation on or before each calendar lookback, including an observation just before the visible range; a value is shown only when that observation is within 10 calendar days of the target date.</span>
+        <span>Annualized volatility is the sample standard deviation of business-day yield changes multiplied by the square root of 252.</span>
       </div>
     </article>
   );
@@ -471,13 +477,13 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
       {activeTab === "snapshot" ? (
         <div id="workspace-panel-snapshot" role="tabpanel" aria-labelledby="workspace-tab-snapshot" tabIndex={0} className="workspace-panel workspace-panel--snapshot">
           <div className="dashboard-grid dashboard-grid--workspace">
-            {currentData ? <YieldCurveChart data={currentData.curve} recordDate={currentData.source.recordDate} /> : <LoadingBlock className="panel panel--curve" rows={6} />}
-            {currentData ? <CurveMatrix data={currentData} /> : <LoadingBlock className="panel panel--curve-matrix" rows={6} />}
+            {currentData ? <YieldCurveChart data={currentData.curve} recordDate={currentData.source.recordDate} /> : currentLoading ? <LoadingBlock className="panel panel--curve" rows={6} /> : <div className="empty-state">Official CMT market snapshot unavailable{currentError?.message ? `: ${currentError.message}` : "."}</div>}
+            {currentData ? <CurveMatrix data={currentData} /> : currentLoading ? <LoadingBlock className="panel panel--curve-matrix" rows={6} /> : null}
           </div>
-          <div className="workspace-source-strip">
-            <span>Current values are official Treasury CMT par yields, observed near 3:30 PM ET on business days.</span>
-            <span>{currentLoading ? "Refreshing current feed" : currentData ? `Official CMT ${formatDate(currentData.source.recordDate)}` : "Current feed unavailable"}</span>
-          </div>
+          {currentData ? <div className="workspace-source-strip">
+            <span>Latest values are official Treasury CMT par yields, derived from indicative bid-side quotations observed near 3:30 PM ET on trading days.</span>
+            <span>{currentLoading ? "Checking Treasury XML" : `Official CMT ${formatDate(currentData.source.recordDate)}`}</span>
+          </div> : null}
         </div>
       ) : isLoading || !data ? (
         <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`} tabIndex={0}>
@@ -485,6 +491,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
         </div>
       ) : (
         <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`} tabIndex={0}>
+          {data.cache.warning || error ? <div className="notice notice--warning" role="status"><strong>Historical refresh warning.</strong><span>{data.cache.warning ?? `Displaying the last loaded H.15 dataset. ${error instanceof Error ? error.message : ""}`}</span></div> : null}
           <div className="research-header research-header--workspace">
             <div>
               <p className="eyebrow">Macro research layer</p>
@@ -500,7 +507,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
                 <span>Reference window</span>
                 {(["1W", "1M", "1Y", "RANGE"] as const).map((item) => <button key={item} type="button" onClick={() => setComparisonHorizon(item)}>{item === "RANGE" ? "Range start" : item}</button>)}
               </div>
-              <YieldCurveComparison rows={data.rows} asOfDate={comparisonAsOf} referenceDate={comparisonReference} onAsOfDateChange={setComparisonAsOf} onReferenceDateChange={setComparisonReference} />
+              <YieldCurveComparison rows={data.rows} asOfDate={comparisonAsOf} referenceDate={comparisonReference} onAsOfDateChange={setComparisonAsOfDate} onReferenceDateChange={setComparisonReference} />
             </>
           ) : null}
 

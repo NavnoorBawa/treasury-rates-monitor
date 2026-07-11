@@ -37,7 +37,7 @@ Primary source for Daily Treasury Par Yield Curve Rates.
 - No API key required.
 - Free, official, and directly maintained by Treasury.
 
-Treasury states that these CMT par yields are derived from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM each business day. Therefore, the official CMT curve is intrinsically daily. A free source that appears to update intraday would be showing a different instrument, an estimate, or a republished value rather than a newer official CMT observation.
+Treasury states that these CMT par yields are derived from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM each trading day and are usually published by 6:00 PM Eastern Time. Therefore, the official CMT curve is intrinsically daily. A free source that appears to update intraday would be showing a different instrument, an estimate, or a republished value rather than a newer official CMT observation.
 
 The Treasury documentation says the feed accepts GET requests, returns XML responses, and supports standard HTTP response codes. Treasury also documents the exact endpoint used by this app:
 
@@ -98,7 +98,7 @@ For a larger production system, FRED should be added as a secondary validation/c
 
 ## Deployment Decision
 
-Vercel remains the better publishing target for this project. It deploys the React application and Node API routes together, creates preview deployments from branches, and keeps the presentation responsive on any device. Streamlit is effective for a quick Python research prototype, but it would require a separate implementation and gives less control over this product's interaction model, metadata, and institutional dashboard presentation. The current production site stays on `main`; experimental curve-regime work is isolated in a feature branch until approved.
+Vercel remains the better publishing target for this project. It deploys the React application and Node API routes together, creates preview deployments from branches, and keeps the presentation responsive on any device. Streamlit is effective for a quick Python research prototype, but it would require a separate implementation and gives less control over this product's interaction model, metadata, and institutional dashboard presentation. The production site deploys automatically from `main`; future experiments should use preview branches before merging.
 
 ## Event Marker Policy
 

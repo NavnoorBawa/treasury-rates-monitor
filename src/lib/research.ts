@@ -38,7 +38,7 @@ export type CurveMoveHorizon = "1W" | "1M";
 
 export type CurveComparisonHorizon = CurveMoveHorizon | "3M" | "6M" | "1Y";
 
-// CMT yields are published to one decimal basis point. A slightly wider monthly
+// CMT yields are published to the nearest basis point. A slightly wider monthly
 // tolerance avoids calling a trivial slope move a directional steepener/flattener.
 export const curveMoveShapeToleranceBps: Record<CurveMoveHorizon, number> = {
   "1W": 3,
@@ -312,11 +312,43 @@ export const getEventFocusRange = (event: MacroEvent, rows: HistoricalRow[]) => 
 export const filterRowsByRange = (rows: HistoricalRow[], start: string, end: string) =>
   rows.filter((row) => row.date >= start && row.date <= end);
 
+const csvEscape = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
+
+const csvYield = (value: number | null | undefined) =>
+  value === null || value === undefined || Number.isNaN(value) ? "" : value.toFixed(3);
+
+const csvBps = (value: number | null | undefined) =>
+  value === null || value === undefined || Number.isNaN(value) ? "" : value.toFixed(1);
+
+export const buildTreasuryCurveCsv = (rows: HistoricalRow[]) => {
+  const headers = [
+    "date",
+    ...maturityKeys.map((key) => `${key}_yield_pct_pa`),
+    ...curvePairs.map((pair) => `${pair.longKey}_minus_${pair.shortKey}_spread_bps`)
+  ];
+  const body = rows.map((row) => [
+    row.date,
+    ...maturityKeys.map((key) => csvYield(row[key])),
+    ...curvePairs.map((pair) => csvBps(row[pair.key]))
+  ]);
+
+  return [headers.map(csvEscape).join(","), ...body.map((cells) => cells.map(csvEscape).join(","))].join("\n");
+};
+
 export const eventsInRange = (start: string, end: string) =>
   macroEvents.filter((event) => {
     const eventEnd = event.endDate ?? event.startDate;
     return event.startDate <= end && eventEnd >= start;
   });
+
+export const getEventMarkerDate = (event: MacroEvent, rows: HistoricalRow[], start: string, end: string) => {
+  if (event.startDate < start || event.startDate > end) return null;
+  return rows.find((row) => row.date >= event.startDate && row.date <= end)?.date ?? null;
+};
 
 const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
@@ -349,8 +381,18 @@ export const classifyCurveMove = (
   return levelDeltaBps >= 0 ? "Bear flattening" : "Bull flattening";
 };
 
-export const movementRationale = (type: CurveMoveType, pair: CurvePair) => {
+export const movementRationale = (type: CurveMoveType, pair: CurvePair, levelDeltaBps?: number) => {
   const segment = `${pair.longKey}/${pair.shortKey}`;
+
+  if (levelDeltaBps === 0) {
+    const shape = type.includes("steepening")
+      ? "steepened"
+      : type.includes("flattening")
+        ? "flattened"
+        : "remained inside the near-parallel slope tolerance";
+
+    return `${segment} ${shape} while the pair's average yield change was exactly zero. The exhaustive six-state taxonomy applies its disclosed nonnegative bear/higher tie-break; this offsetting move does not identify a single economic cause.`;
+  }
 
   switch (type) {
     case "Bear steepening":
@@ -451,7 +493,7 @@ export const buildCurveMove = (
     levelDeltaBps,
     shapeToleranceBps,
     type,
-    rationale: movementRationale(type, pair)
+    rationale: movementRationale(type, pair, levelDeltaBps)
   };
 };
 
@@ -609,6 +651,7 @@ export const buildStats = (rows: HistoricalRow[], referenceRows = rows) =>
     return {
       key,
       latest,
+      latestObservationDate: latestObservation?.date ?? null,
       min: values.length ? Math.min(...values) : null,
       max: values.length ? Math.max(...values) : null,
       average: mean(values),

@@ -86,26 +86,26 @@ const regimeColorGroups: Array<{
 }> = [
   {
     label: "Steepening",
-    rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} > +${toleranceBps} bp`,
+    rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} > +${toleranceBps} bps`,
     moves: [
-      { type: "Bull steepening", label: "Bull", direction: "Yields lower" },
-      { type: "Bear steepening", label: "Bear", direction: "Yields higher" }
+      { type: "Bull steepening", label: "Bull", direction: "Pair avg < 0" },
+      { type: "Bear steepening", label: "Bear", direction: "Pair avg ≥ 0" }
     ]
   },
   {
     label: "Flattening",
-    rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} < -${toleranceBps} bp`,
+    rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} < -${toleranceBps} bps`,
     moves: [
-      { type: "Bull flattening", label: "Bull", direction: "Yields lower" },
-      { type: "Bear flattening", label: "Bear", direction: "Yields higher" }
+      { type: "Bull flattening", label: "Bull", direction: "Pair avg < 0" },
+      { type: "Bear flattening", label: "Bear", direction: "Pair avg ≥ 0" }
     ]
   },
   {
     label: "Near-parallel",
-    rule: (toleranceBps, spreadLabel) => `|Δ${spreadLabel}| ≤ ${toleranceBps} bp`,
+    rule: (toleranceBps, spreadLabel) => `|Δ${spreadLabel}| ≤ ${toleranceBps} bps`,
     moves: [
-      { type: "Parallel shift lower", label: "Lower", direction: "Yields lower" },
-      { type: "Parallel shift higher", label: "Higher", direction: "Yields higher" }
+      { type: "Parallel shift lower", label: "Lower", direction: "Pair avg < 0" },
+      { type: "Parallel shift higher", label: "Higher", direction: "Pair avg ≥ 0" }
     ]
   }
 ];
@@ -131,6 +131,12 @@ const analysisWindowLabel = (window: AnalysisWindow) => {
 
 const calendarDaySpan = (startDate: string, endDate: string) =>
   (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) / 86_400_000;
+
+const previousCalendarDate = (date: string) => {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() - 1);
+  return value.toISOString().slice(0, 10);
+};
 
 const aggregateEpisodeMove = (episode: RegimeEpisode): EpisodeMove =>
   episode.points.reduce<EpisodeMove>(
@@ -289,6 +295,11 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
 
   const noun = periodNoun(horizon);
   const asOfRecordDate = analysisAsOf?.date ?? asOfDate;
+  const setAnalysisEndDate = (value: string) => {
+    setAsOfDate(value);
+    setCustomReferenceDate((current) => current < value ? current : startDate);
+    setSelectedEpisodeId(null);
+  };
   const handleEpisodeSelect = (episode: RegimeEpisode) => {
     setSelectedEpisodeId(episode.id);
     setAsOfDate(episode.endDate);
@@ -310,7 +321,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
         <div className="regime-analysis-controls__date">
           <div className="regime-field-label">
             <label htmlFor="regime-end-date">End date</label>
-            <HelpTip label="The business-day observation at which the selected two-tenor move ends." />
+            <HelpTip label="The valid observation at which the selected two-tenor move ends." />
           </div>
           <input
             id="regime-end-date"
@@ -318,14 +329,8 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
             min={startDate}
             max={endDate}
             value={asOfDate}
-            onChange={(event) => {
-              setAsOfDate(event.target.value);
-              setSelectedEpisodeId(null);
-            }}
-            onInput={(event) => {
-              setAsOfDate(event.currentTarget.value);
-              setSelectedEpisodeId(null);
-            }}
+            onChange={(event) => setAnalysisEndDate(event.target.value)}
+            onInput={(event) => setAnalysisEndDate(event.currentTarget.value)}
           />
         </div>
         <div className="regime-analysis-controls__window">
@@ -365,13 +370,13 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
           <div className="regime-analysis-controls__date">
             <div className="regime-field-label">
               <label htmlFor="regime-start-date">Start date</label>
-              <HelpTip label="The business-day observation from which a custom date-to-date curve move is measured." />
+              <HelpTip label="The valid observation from which a custom date-to-date curve move is measured." />
             </div>
             <input
               id="regime-start-date"
               type="date"
               min={startDate}
-              max={asOfDate}
+              max={previousCalendarDate(asOfDate)}
               value={customReferenceDate}
               onChange={(event) => {
                 setCustomReferenceDate(event.target.value);
@@ -395,7 +400,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
         <div className="regime-summary__tile">
           <span>Visible-range net slope change</span>
           <strong>{formatBps(rangeMove?.spreadDeltaBps)}</strong>
-          <small>{rangeMove ? `${rangeMove.type} · ${formatDate(rangeMove.comparisonDate)} to ${formatDate(endDate)}` : "Insufficient pair observations"}</small>
+          <small>{rangeMove ? `${rangeMove.type} · ${formatDate(rangeMove.comparisonDate)} to ${formatDate(rangeEndPoint?.date ?? endDate)}` : "Insufficient pair observations"}</small>
         </div>
         <div className="regime-summary__tile">
           <span>Range-end {pair.label} spread</span>
@@ -498,7 +503,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
       </div>
 
       <div className="regime-key__intro" id="regime-color-key-title">
-        <span><strong>Color logic</strong> · Cool hues: yields lower · Warm hues: yields higher · <i aria-hidden="true" /> Gray: open/unclassified interval</span>
+        <span><strong>Color logic</strong> · Cool hues: pair average &lt; 0 · Warm hues: pair average ≥ 0 · <i aria-hidden="true" /> Gray: open/unclassified interval</span>
         <span>Counts: completed {noun}s</span>
       </div>
       <div className="regime-key" aria-labelledby="regime-color-key-title">
@@ -549,7 +554,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
       <div className="spread-note">
         <Info size={15} aria-hidden="true" />
         <span>
-          The chart highlight is the selected date-to-date comparison; the ribbon is completed calendar-period history. Pair average move is the average of the selected-tenor yield changes; pair slope change is the change in the long-minus-short spread. Bull/bear follows the pair average move. Near-parallel applies only when the pair&apos;s slope change is within the stated tolerance, not to the full Treasury curve.
+          The chart highlight is the selected date-to-date comparison; the ribbon is completed calendar-period history. Pair average move is the average of the selected-tenor yield changes; pair slope change is the change in the long-minus-short spread. Bull/bear follows the pair average move; an exactly zero average uses the nonnegative bear/higher tie-break. Near-parallel applies only when the pair&apos;s slope change is within the stated tolerance, not to the full Treasury curve.
         </span>
       </div>
     </article>

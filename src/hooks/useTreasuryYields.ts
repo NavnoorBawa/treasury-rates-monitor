@@ -3,8 +3,9 @@ import type { TreasuryPayload } from "../types";
 
 const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 
-const fetchTreasuryYields = async (): Promise<TreasuryPayload> => {
+const fetchTreasuryYields = async (signal?: AbortSignal): Promise<TreasuryPayload> => {
   const response = await fetch("/api/yields", {
+    signal,
     headers: {
       Accept: "application/json"
     }
@@ -22,10 +23,9 @@ const fetchTreasuryYields = async (): Promise<TreasuryPayload> => {
 export function useTreasuryYields() {
   return useQuery({
     queryKey: ["treasury-yields"],
-    queryFn: fetchTreasuryYields,
+    queryFn: ({ signal }) => fetchTreasuryYields(signal),
     refetchInterval: REFRESH_INTERVAL_MS,
     refetchOnWindowFocus: true,
     staleTime: 5 * 60 * 1000
   });
 }
-
