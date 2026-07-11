@@ -81,12 +81,12 @@ const typeColor: Record<CurveMoveType, string> = {
 
 const regimeColorGroups: Array<{
   label: string;
-  rule: (toleranceBps: number) => string;
+  rule: (toleranceBps: number, spreadLabel: string) => string;
   moves: Array<{ type: CurveMoveType; label: string; direction: string }>;
 }> = [
   {
     label: "Steepening",
-    rule: (toleranceBps) => `Slope Δ > +${toleranceBps} bps`,
+    rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} > +${toleranceBps} bp`,
     moves: [
       { type: "Bull steepening", label: "Bull", direction: "Yields lower" },
       { type: "Bear steepening", label: "Bear", direction: "Yields higher" }
@@ -94,7 +94,7 @@ const regimeColorGroups: Array<{
   },
   {
     label: "Flattening",
-    rule: (toleranceBps) => `Slope Δ < -${toleranceBps} bps`,
+    rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} < -${toleranceBps} bp`,
     moves: [
       { type: "Bull flattening", label: "Bull", direction: "Yields lower" },
       { type: "Bear flattening", label: "Bear", direction: "Yields higher" }
@@ -102,7 +102,7 @@ const regimeColorGroups: Array<{
   },
   {
     label: "Near-parallel",
-    rule: (toleranceBps) => `|Slope Δ| ≤ ${toleranceBps} bps`,
+    rule: (toleranceBps, spreadLabel) => `|Δ${spreadLabel}| ≤ ${toleranceBps} bp`,
     moves: [
       { type: "Parallel shift lower", label: "Lower", direction: "Yields lower" },
       { type: "Parallel shift higher", label: "Higher", direction: "Yields higher" }
@@ -409,7 +409,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
           <LineChart data={spreadSeries} margin={{ top: 14, right: 20, bottom: 6, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
             <XAxis dataKey="date" minTickGap={42} tickFormatter={compactDateTick} tickLine={false} axisLine={false} tick={{ fill: "var(--muted)", fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} width={66} tickFormatter={(value) => `${Number(value).toFixed(0)} bps`} tick={{ fill: "var(--muted)", fontSize: 12 }} />
+            <YAxis tickLine={false} axisLine={false} width={76} tickFormatter={(value) => `${Number(value).toFixed(0)} bps`} tick={{ fill: "var(--muted)", fontSize: 12 }} />
             <Tooltip content={<SpreadTooltip />} />
             <ReferenceLine y={0} stroke="var(--zero-line)" strokeDasharray="4 5" />
             {analysisMove && analysisAsOf ? (
@@ -497,12 +497,16 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
         </div>
       </div>
 
-      <div className="regime-key" aria-label="Curve movement color key">
+      <div className="regime-key__intro" id="regime-color-key-title">
+        <span><strong>Color logic</strong> · Cool hues: yields lower · Warm hues: yields higher · <i aria-hidden="true" /> Gray: open/unclassified interval</span>
+        <span>Counts: completed {noun}s</span>
+      </div>
+      <div className="regime-key" aria-labelledby="regime-color-key-title">
         {regimeColorGroups.map((group) => (
           <div className="regime-key__group" key={group.label}>
             <div className="regime-key__heading">
               <strong>{group.label}</strong>
-              <span>{group.rule(curveMoveShapeToleranceBps[horizon])}</span>
+              <span>{group.rule(curveMoveShapeToleranceBps[horizon], pair.label.replaceAll(" ", ""))}</span>
             </div>
             <div className="regime-key__moves">
               {group.moves.map((move) => (
