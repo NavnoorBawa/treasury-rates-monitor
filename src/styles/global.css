@@ -3755,16 +3755,11 @@ h3 {
   gap: 7px;
 }
 
-.futures-range-selector {
-  width: auto;
-}
-
-.futures-range-selector .segmented-control__button {
-  min-width: 40px;
-  min-height: 27px;
-  padding-inline: 7px;
+.futures-toolbar__interval {
+  color: var(--subtle);
   font-family: var(--font-number);
   font-size: 9px;
+  font-weight: 620;
 }
 
 .futures-toolbar .icon-button {
@@ -4143,12 +4138,6 @@ h3 {
 
   .futures-toolbar {
     padding-left: 8px;
-  }
-
-  .futures-range-selector {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: auto;
   }
 
   .futures-contract {

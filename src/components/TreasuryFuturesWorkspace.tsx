@@ -18,15 +18,8 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useTreasuryFutures } from "../hooks/useTreasuryFutures";
-import type {
-  DashboardMaturityKey,
-  FuturesInstrument,
-  FuturesRange,
-  FuturesSeriesPoint
-} from "../types";
+import type { DashboardMaturityKey, FuturesInstrument, FuturesSeriesPoint } from "../types";
 import { LoadingBlock } from "./LoadingBlock";
-
-const rangeOptions: FuturesRange[] = ["1D", "5D", "1M"];
 
 const maturityColors: Record<DashboardMaturityKey, string> = {
   "2Y": "var(--series-2y)",
@@ -63,15 +56,10 @@ const formatExchangeTime = (value: string | number | null, includeDate = true) =
   }).format(date);
 };
 
-const formatChartTick = (timestamp: number, range: FuturesRange) => {
-  const options: Intl.DateTimeFormatOptions = range === "1D"
-    ? { hour: "numeric", minute: "2-digit" }
-    : range === "5D"
-      ? { weekday: "short", hour: "numeric" }
-      : { month: "short", day: "numeric" };
-
+const formatChartTick = (timestamp: number) => {
   return new Intl.DateTimeFormat("en-US", {
-    ...options,
+    hour: "numeric",
+    minute: "2-digit",
     timeZone: "America/New_York"
   }).format(new Date(timestamp));
 };
@@ -118,9 +106,8 @@ const rateDirectionLabel = (instrument: FuturesInstrument) => {
 };
 
 export function TreasuryFuturesWorkspace() {
-  const [range, setRange] = useState<FuturesRange>("1D");
   const [selectedSymbol, setSelectedSymbol] = useState<FuturesInstrument["symbol"]>("ZN=F");
-  const { data, error, isFetching, isLoading, refetch } = useTreasuryFutures(range);
+  const { data, error, isFetching, isLoading, refetch } = useTreasuryFutures("1D");
   const selected = data?.instruments.find((instrument) => instrument.symbol === selectedSymbol)
     ?? data?.instruments[0];
 
@@ -129,10 +116,6 @@ export function TreasuryFuturesWorkspace() {
       setSelectedSymbol(data.instruments[0].symbol);
     }
   }, [data?.instruments, selectedSymbol]);
-
-  useEffect(() => {
-    if (data?.range.key && data.range.key !== range) setRange(data.range.key);
-  }, [data?.range.key, range]);
 
   const chartDomain = useMemo<[number, number]>(() => {
     if (!selected?.series.length) return [0, 1];
@@ -205,21 +188,9 @@ export function TreasuryFuturesWorkspace() {
       ) : null}
 
       <div className="futures-toolbar">
-        <span>Price tape</span>
+        <span>Intraday price tape</span>
         <div className="futures-toolbar__actions">
-          <div className="segmented-control futures-range-selector" aria-label="Futures chart range">
-            {rangeOptions.map((option) => (
-              <button
-                className={range === option ? "segmented-control__button segmented-control__button--active" : "segmented-control__button"}
-                key={option}
-                type="button"
-                aria-pressed={range === option}
-                onClick={() => setRange(option)}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+          <span className="futures-toolbar__interval">1D · 5m</span>
           <button className="icon-button" type="button" onClick={() => refetch()} aria-label="Refresh delayed futures data" title="Refresh delayed futures data">
             <RefreshCw size={16} className={isFetching ? "spin" : ""} aria-hidden="true" />
           </button>
@@ -290,7 +261,7 @@ export function TreasuryFuturesWorkspace() {
                     scale="time"
                     domain={["dataMin", "dataMax"]}
                     minTickGap={48}
-                    tickFormatter={(value) => formatChartTick(Number(value), range)}
+                    tickFormatter={(value) => formatChartTick(Number(value))}
                     tickLine={false}
                     axisLine={false}
                     tick={{ fill: "var(--muted)", fontSize: 10 }}

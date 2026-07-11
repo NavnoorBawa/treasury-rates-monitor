@@ -30,7 +30,7 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 
 - Long-run historical data for 2Y, 5Y, 10Y, and 30Y Treasury yields.
 - Trader-style workspace tabs: Market, Futures, Compare, History, and Regimes. Only the active view is shown, avoiding a stacked-scroll layout.
-- A delayed CBOT Treasury-futures tape for `ZT=F`, `ZF=F`, `ZN=F`, and `ZB=F`, with 1D/5D/1M price charts, previous-close moves in 32nds, session range, reported volume, quote timestamps, and explicit inverse price/yield direction. Futures data is isolated from every official CMT calculation, spread, regime, statistic, and export.
+- A delayed CBOT Treasury-futures tape for `ZT=F`, `ZF=F`, `ZN=F`, and `ZB=F`, with a dependable 1D intraday chart, previous-close moves in 32nds, session range, reported volume, quote timestamps, and explicit inverse price/yield direction. Futures data is isolated from every official CMT calculation, spread, regime, statistic, and export.
 - Validated shareable workspace URLs preserve the active view and relevant range, dates, spread, curve pair, history section, and weekly/monthly interval. The Copy view action writes the normalized setup URL to the clipboard; malformed or out-of-sample parameters fall back to valid H.15 dates and supported controls.
 - Date-range presets: 1Y, 5Y, 10Y, 20Y, Max, plus custom start/end dates.
 - Six core 2Y/5Y/10Y/30Y curve combinations: 5Y-2Y, 10Y-2Y, 30Y-2Y, 10Y-5Y, 30Y-5Y, and 30Y-10Y.
