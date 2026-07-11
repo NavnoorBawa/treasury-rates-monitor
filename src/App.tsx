@@ -34,7 +34,7 @@ function App() {
           <div className={`refresh-pill ${isFetching ? "refresh-pill--active" : ""}`} aria-live="polite">
             <span className="refresh-pill__dot" />
             <span className="refresh-pill__copy">
-              <small>Official close</small>
+              <small>Official CMT</small>
               <strong>{data ? formatDate(data.source.recordDate) : "Connecting"}</strong>
             </span>
           </div>
@@ -78,7 +78,7 @@ function App() {
 
       <footer className="app-footer">
         <span>Current data: U.S. Treasury XML. Long-run history: Federal Reserve H.15 DDP.</span>
-        <span>The app checks Treasury every 15 minutes; the official CMT fixing publishes once per business day.</span>
+        <span>The app checks Treasury every 15 minutes; Treasury publishes the official CMT curve once per business day.</span>
       </footer>
     </main>
   );

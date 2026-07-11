@@ -37,7 +37,7 @@ Primary source for Daily Treasury Par Yield Curve Rates.
 - No API key required.
 - Free, official, and directly maintained by Treasury.
 
-Treasury states that these CMT par yields are derived from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM each business day. Therefore, the official CMT curve is intrinsically daily. A free source that appears to update intraday would be showing a different instrument, an estimate, or a republished value rather than a newer official CMT fixing.
+Treasury states that these CMT par yields are derived from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM each business day. Therefore, the official CMT curve is intrinsically daily. A free source that appears to update intraday would be showing a different instrument, an estimate, or a republished value rather than a newer official CMT observation.
 
 The Treasury documentation says the feed accepts GET requests, returns XML responses, and supports standard HTTP response codes. Treasury also documents the exact endpoint used by this app:
 

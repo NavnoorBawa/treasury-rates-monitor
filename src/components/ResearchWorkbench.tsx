@@ -476,7 +476,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
           </div>
           <div className="workspace-source-strip">
             <span>Current values are official Treasury CMT par yields, observed near 3:30 PM ET on business days.</span>
-            <span>{currentLoading ? "Refreshing current feed" : currentData ? `Official fixing ${formatDate(currentData.source.recordDate)}` : "Current feed unavailable"}</span>
+            <span>{currentLoading ? "Refreshing current feed" : currentData ? `Official CMT ${formatDate(currentData.source.recordDate)}` : "Current feed unavailable"}</span>
           </div>
         </div>
       ) : isLoading || !data ? (

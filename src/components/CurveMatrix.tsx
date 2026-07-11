@@ -39,7 +39,7 @@ export function CurveMatrix({ data }: CurveMatrixProps) {
       <div className="curve-matrix__source">
         <span>
           <Database size={14} aria-hidden="true" />
-          CMT fixing {formatDate(data.source.recordDate)} · Prior {formatDate(data.source.previousRecordDate)}
+          CMT observation {formatDate(data.source.recordDate)} · Prior {formatDate(data.source.previousRecordDate)}
         </span>
         <span>
           <TimerReset size={14} aria-hidden="true" />
