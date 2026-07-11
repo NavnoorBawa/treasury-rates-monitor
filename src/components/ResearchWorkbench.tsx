@@ -445,7 +445,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
 
   return (
     <section className="workspace-shell" aria-label="Treasury research workspace">
-      <div className="workspace-tabs" role="tablist" aria-label="Treasury dashboard views">
+      <div className="workspace-tabs" role="tablist" aria-label="Treasury dashboard views" aria-orientation="horizontal">
         {workspaceTabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -457,6 +457,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls={`workspace-panel-${tab.id}`}
+              tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               onKeyDown={(event) => handleWorkspaceTabKeyDown(event, tab.id)}
             >
@@ -468,7 +469,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
       </div>
 
       {activeTab === "snapshot" ? (
-        <div id="workspace-panel-snapshot" role="tabpanel" aria-labelledby="workspace-tab-snapshot" className="workspace-panel workspace-panel--snapshot">
+        <div id="workspace-panel-snapshot" role="tabpanel" aria-labelledby="workspace-tab-snapshot" tabIndex={0} className="workspace-panel workspace-panel--snapshot">
           <div className="dashboard-grid dashboard-grid--workspace">
             {currentData ? <YieldCurveChart data={currentData.curve} recordDate={currentData.source.recordDate} /> : <LoadingBlock className="panel panel--curve" rows={6} />}
             {currentData ? <CurveMatrix data={currentData} /> : <LoadingBlock className="panel panel--curve-matrix" rows={6} />}
@@ -479,11 +480,11 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
           </div>
         </div>
       ) : isLoading || !data ? (
-        <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`}>
+        <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`} tabIndex={0}>
           {error ? <div className="notice" role="alert"><strong>Unable to load long-run historical data.</strong><span>{error instanceof Error ? error.message : "Please retry in a moment."}</span></div> : <LoadingBlock className="panel" rows={7} />}
         </div>
       ) : (
-        <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`}>
+        <div className="workspace-panel" role="tabpanel" id={`workspace-panel-${activeTab}`} aria-labelledby={`workspace-tab-${activeTab}`} tabIndex={0}>
           <div className="research-header research-header--workspace">
             <div>
               <p className="eyebrow">Macro research layer</p>
@@ -507,7 +508,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
 
           {activeTab === "history" ? (
             <>
-              <div className="research-subtabs" role="tablist" aria-label="Historical research panels">
+              <div className="research-subtabs" role="tablist" aria-label="Historical research panels" aria-orientation="horizontal">
                 {historyViews.map((view) => (
                   <button
                     id={`history-view-tab-${view.id}`}
@@ -517,6 +518,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
                     role="tab"
                     aria-selected={historyView === view.id}
                     aria-controls={`history-view-panel-${view.id}`}
+                    tabIndex={historyView === view.id ? 0 : -1}
                     onClick={() => setHistoryView(view.id)}
                     onKeyDown={(event) => handleHistoryViewKeyDown(event, view.id)}
                   >
@@ -524,7 +526,7 @@ export function ResearchWorkbench({ currentData, currentLoading }: ResearchWorkb
                   </button>
                 ))}
               </div>
-              <div id={`history-view-panel-${historyView}`} role="tabpanel" aria-labelledby={`history-view-tab-${historyView}`}>
+              <div id={`history-view-panel-${historyView}`} role="tabpanel" aria-labelledby={`history-view-tab-${historyView}`} tabIndex={0}>
                 {historyView === "charts" ? renderHistoryCharts() : historyView === "events" ? renderEvents() : renderStatistics()}
               </div>
             </>
