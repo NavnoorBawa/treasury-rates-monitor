@@ -22,37 +22,37 @@
     <rect x="66" y="26" width="8" height="48" rx="4" fill="#d09a64"/>
   </g>
 
-  <text x="226" y="128" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="700">Institutional rates dashboard</text>
+  <text x="226" y="128" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="700">Official rates research dashboard</text>
   <text x="226" y="194" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="58" font-weight="780">U.S. Treasury Yield Dashboard</text>
   <text x="226" y="244" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26">
     <tspan x="226" y="244">Current CMT yields, Fed H.15 history, curve spreads,</tspan>
-    <tspan x="226" y="280">macro events, and selected-period statistics.</tspan>
+    <tspan x="226" y="280">sourced event annotations, and selected-period statistics.</tspan>
   </text>
 
   <g transform="translate(108 312)">
     <g>
       <rect width="218" height="112" rx="16" fill="#0f1412" stroke="#2b332f"/>
       <rect width="4" height="112" rx="2" fill="#56b9aa"/>
-      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">2Y CMT</text>
-      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="780">4.13%</text>
+      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">CURRENT CMT</text>
+      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="780">2Y / 5Y</text>
     </g>
     <g transform="translate(242)">
       <rect width="218" height="112" rx="16" fill="#0f1412" stroke="#2b332f"/>
       <rect width="4" height="112" rx="2" fill="#d0a24c"/>
-      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">5Y CMT</text>
-      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="780">4.21%</text>
+      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">CURVE TENORS</text>
+      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="35" font-weight="780">10Y / 30Y</text>
     </g>
     <g transform="translate(484)">
       <rect width="218" height="112" rx="16" fill="#0f1412" stroke="#2b332f"/>
       <rect width="4" height="112" rx="2" fill="#8195d2"/>
-      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">10Y CMT</text>
-      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="780">4.48%</text>
+      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">LONG HISTORY</text>
+      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="780">H.15</text>
     </g>
     <g transform="translate(726)">
       <rect width="218" height="112" rx="16" fill="#0f1412" stroke="#2b332f"/>
       <rect width="4" height="112" rx="2" fill="#c77685"/>
-      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">30Y CMT</text>
-      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="780">4.99%</text>
+      <text x="26" y="42" fill="#a3ada7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">CURVE REGIMES</text>
+      <text x="26" y="88" fill="#eef1ed" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="780">6 PAIRS</text>
     </g>
   </g>
 

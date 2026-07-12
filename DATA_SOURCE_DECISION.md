@@ -9,7 +9,7 @@ Use a two-source architecture:
 
 FRED is credible and professor-friendly as a reference, but it is not the best primary production feed here because it republishes Treasury constant maturity data through the Federal Reserve/FRED ecosystem and can lag the Treasury feed. The Treasury XML feed is the direct publisher for the Daily Treasury Par Yield Curve Rates used in the top current-market dashboard. The Federal Reserve H.15 DDP is the best free official source for long-run historical research because it provides a direct automated CSV package with all Treasury constant maturity observations.
 
-Yahoo/yfinance is deliberately excluded from the official CMT dataset. It is not an official publisher of U.S. Treasury constant-maturity yields. It is used only in the separate Futures tab as a delayed price feed for exchange-traded CBOT contracts, where the instrument identity and limitations are explicit.
+Yahoo/yfinance is deliberately excluded from the official CMT dataset. It is not an official publisher of U.S. Treasury constant-maturity yields. It is used only in the separate Futures tab as a delayed price feed for exchange-traded CBOT contracts, where instrument identity, trade date, freshness, and limitations are explicit.
 
 ## Intraday Source Review
 
@@ -21,7 +21,7 @@ The public dashboard intentionally omits intraday CMT yields because no reviewed
 - FINRA Treasury aggregates describe prior-trading-day activity and do not provide a real-time tenor yield curve: https://www.finra.org/treasuryaggregates
 - Twelve Data lists U.S. Treasury yield symbols, but its free plan is for internal non-display use and its terms require explicit external-display or redistribution rights: https://twelvedata.com/pricing-business and https://twelvedata.com/terms
 - TradingView widgets do not provide an API or export path, and the TVC government-bond symbols are restricted from the embedded Advanced Chart widget. A user subscription also does not grant data rights for an independently calculated public dashboard: https://www.tradingview.com/widget-docs/faq/data/ and https://www.tradingview.com/support/solutions/43000709178-what-does-tvc-stand-for-in-the-instrument-ticker/
-- Yahoo Finance exposes delayed front-contract Treasury-futures prices for `ZT=F`, `ZF=F`, `ZN=F`, and `ZB=F`. This gives a complete directional proxy set for the requested maturity sectors, but Yahoo/yfinance remains unofficial, rate-limited, and intended for research/personal use. The implementation therefore labels it delayed, caches for five minutes, supports stale/embedded-page fallback, and never mixes it into official calculations.
+- Yahoo Finance exposes delayed Treasury-futures prices for `ZT=F`, `ZF=F`, `ZN=F`, and `UB=F`. Ultra Bond's 25Y+ deliverable basket is the defensible long-end proxy; classic `ZB=F` is not labeled 30Y because its deliverable basket is 15 to under 25 years. Yahoo/yfinance remains unofficial and rate-limited. The implementation therefore labels it delayed, validates each contract's session independently, caches for five minutes, supports explicit fallbacks, and never mixes it into official calculations.
 
 Treating an embedded third-party chart, Treasury-futures proxy, or delayed retail symbol as the official CMT curve would weaken the project's data lineage. The Futures tab avoids that error by presenting only traded contract prices and explicitly disclosing the inverse directional relationship, cheapest-to-deliver basis, delay, and non-comparability of raw moves across tenors. If redistribution-authorized BrokerTec or equivalent cash-market data is obtained later, it should be added as a separate on-the-run instrument layer and never spliced into the daily CMT history.
 
@@ -103,4 +103,4 @@ Vercel remains the better publishing target for this project. It deploys the Rea
 
 ## Event Marker Policy
 
-Event markers are not used as data inputs. They are contextual annotations for visual regime analysis. Dates were selected as widely recognized market or policy reference points, such as FOMC decision dates, market peaks/lows, crisis onset dates, or official policy-announcement dates. Descriptions are intentionally neutral and avoid claiming a single-cause relationship between the event and yield movements.
+Event markers are not used as data inputs. They are sourced contextual annotations for visual regime research. Every event declares a source and window convention. Decision dates and single events are distinguished from project-defined composite or market-anchor windows. Descriptions avoid claiming a single-cause relationship between an event and yield movements.

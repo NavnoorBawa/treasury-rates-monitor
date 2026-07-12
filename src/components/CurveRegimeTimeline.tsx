@@ -21,6 +21,7 @@ import {
   findPairObservationOnOrBefore,
   getComparisonTargetDate,
   type CurveComparisonHorizon,
+  type CurveMoveClassification,
   type CurveMoveHorizon,
   type CurveMoveType,
   type CurvePair,
@@ -39,20 +40,20 @@ interface CurveRegimeTimelineProps {
 interface SpreadChartPoint {
   date: string;
   spreadBps: number | null;
-  regimeType: CurveMoveType | null;
+  regimeType: CurveMoveClassification | null;
   selectedSpreadBps?: number | null;
   [seriesKey: string]: string | number | null | undefined;
 }
 
 interface SelectedRegimeWindow {
-  type: CurveMoveType;
+  type: CurveMoveClassification;
   startDate: string;
   endDate: string;
 }
 
 interface RegimeEpisode {
   id: string;
-  type: CurveMoveType;
+  type: CurveMoveClassification;
   startDate: string;
   endDate: string;
   durationDays: number;
@@ -77,39 +78,45 @@ const analysisWindows: Array<{ key: Exclude<AnalysisWindow, "CUSTOM">; label: st
   { key: "RANGE", label: "Range start" }
 ];
 
-const typeColor: Record<CurveMoveType, string> = {
+const slopeToleranceOptions = [0, 3, 5, 10];
+
+const typeColor: Record<CurveMoveClassification, string> = {
   "Bull steepening": "var(--regime-bull-steepening)",
   "Bear steepening": "var(--regime-bear-steepening)",
   "Bull flattening": "var(--regime-bull-flattening)",
   "Bear flattening": "var(--regime-bear-flattening)",
   "Parallel shift higher": "var(--regime-parallel-higher)",
-  "Parallel shift lower": "var(--regime-parallel-lower)"
+  "Parallel shift lower": "var(--regime-parallel-lower)",
+  "Neutral / unclassified": "var(--chart-regime-neutral)"
 };
 
-type RegimeShape = "steepening" | "flattening" | "parallel";
+type RegimeShape = "steepening" | "flattening" | "parallel" | "neutral";
 
-const regimeShape = (type: CurveMoveType): RegimeShape => {
+const regimeShape = (type: CurveMoveClassification): RegimeShape => {
+  if (type === "Neutral / unclassified") return "neutral";
   if (type.includes("steepening")) return "steepening";
   if (type.includes("flattening")) return "flattening";
   return "parallel";
 };
 
-const regimeStrokeDash: Record<CurveMoveType, string | undefined> = {
+const regimeStrokeDash: Record<CurveMoveClassification, string | undefined> = {
   "Bull steepening": undefined,
   "Bear steepening": undefined,
   "Bull flattening": "7 3",
   "Bear flattening": "7 3",
   "Parallel shift higher": "1 4",
-  "Parallel shift lower": "1 4"
+  "Parallel shift lower": "1 4",
+  "Neutral / unclassified": "3 4"
 };
 
-const regimeDomKey: Record<CurveMoveType, string> = {
+const regimeDomKey: Record<CurveMoveClassification, string> = {
   "Bull steepening": "bull-steepening",
   "Bear steepening": "bear-steepening",
   "Bull flattening": "bull-flattening",
   "Bear flattening": "bear-flattening",
   "Parallel shift lower": "parallel-lower",
-  "Parallel shift higher": "parallel-higher"
+  "Parallel shift higher": "parallel-higher",
+  "Neutral / unclassified": "neutral"
 };
 
 const regimeColorGroups: Array<{
@@ -124,7 +131,7 @@ const regimeColorGroups: Array<{
     rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} > +${toleranceBps} bps`,
     moves: [
       { type: "Bull steepening", label: "Bull", direction: "Pair avg Δ < 0" },
-      { type: "Bear steepening", label: "Bear", direction: "Pair avg Δ ≥ 0" }
+      { type: "Bear steepening", label: "Bear", direction: "Pair avg Δ > 0" }
     ]
   },
   {
@@ -133,7 +140,7 @@ const regimeColorGroups: Array<{
     rule: (toleranceBps, spreadLabel) => `Δ${spreadLabel} < -${toleranceBps} bps`,
     moves: [
       { type: "Bull flattening", label: "Bull", direction: "Pair avg Δ < 0" },
-      { type: "Bear flattening", label: "Bear", direction: "Pair avg Δ ≥ 0" }
+      { type: "Bear flattening", label: "Bear", direction: "Pair avg Δ > 0" }
     ]
   },
   {
@@ -142,7 +149,7 @@ const regimeColorGroups: Array<{
     rule: (toleranceBps, spreadLabel) => `|Δ${spreadLabel}| ≤ ${toleranceBps} bps`,
     moves: [
       { type: "Parallel shift lower", label: "Lower", direction: "Pair avg Δ < 0" },
-      { type: "Parallel shift higher", label: "Higher", direction: "Pair avg Δ ≥ 0" }
+      { type: "Parallel shift higher", label: "Higher", direction: "Pair avg Δ > 0" }
     ]
   }
 ];
@@ -154,7 +161,7 @@ const compactDateTick = (date: string) => {
 
 const intervalLabel = (startDate: string, endDate: string) => `${formatDate(startDate)} to ${formatDate(endDate)}`;
 
-const regimeStyle = (type: CurveMoveType) => ({ "--regime-color": typeColor[type] }) as CSSProperties;
+const regimeStyle = (type: CurveMoveClassification) => ({ "--regime-color": typeColor[type] }) as CSSProperties;
 
 const regimeSeriesKey = (type: CurveMoveType) => `regime-${type}`;
 
@@ -165,9 +172,6 @@ const analysisWindowLabel = (window: AnalysisWindow) => {
   if (window === "CUSTOM") return "Custom dates";
   return window;
 };
-
-const calendarDaySpan = (startDate: string, endDate: string) =>
-  (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) / 86_400_000;
 
 const previousCalendarDate = (date: string) => {
   const value = new Date(`${date}T00:00:00Z`);
@@ -246,7 +250,7 @@ function SpreadTooltip({ active, payload, selectedWindow }: SpreadTooltipProps) 
   );
 }
 
-function RegimeBadge({ type }: { type: CurveMoveType }) {
+function RegimeBadge({ type }: { type: CurveMoveClassification }) {
   return (
     <span className="regime-badge" style={regimeStyle(type)}>
       <span className="regime-badge__glyph" aria-hidden="true"><RegimeGlyph type={type} /></span>
@@ -255,7 +259,8 @@ function RegimeBadge({ type }: { type: CurveMoveType }) {
   );
 }
 
-function RegimeGlyph({ type, size = 13 }: { type: CurveMoveType; size?: number }) {
+function RegimeGlyph({ type, size = 13 }: { type: CurveMoveClassification; size?: number }) {
+  if (type === "Neutral / unclassified") return <MoveRight size={size} strokeWidth={2.2} />;
   const shape = regimeShape(type);
   if (shape === "steepening") return <TrendingUp size={size} strokeWidth={2.2} />;
   if (shape === "flattening") return <TrendingDown size={size} strokeWidth={2.2} />;
@@ -278,9 +283,10 @@ const setRegimePreview = (control: HTMLButtonElement, type: CurveMoveType | null
 };
 
 export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }: CurveRegimeTimelineProps) {
+  const [slopeToleranceBps, setSlopeToleranceBps] = useState(curveMoveShapeToleranceBps[horizon]);
   const timeline = useMemo(
-    () => buildCurveRegimeTimeline(rows, pair, startDate, endDate, horizon),
-    [endDate, horizon, pair, rows, startDate]
+    () => buildCurveRegimeTimeline(rows, pair, startDate, endDate, horizon, slopeToleranceBps),
+    [endDate, horizon, pair, rows, slopeToleranceBps, startDate]
   );
   const rawSpreadSeries = useMemo(
     () => rows
@@ -289,8 +295,8 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
     [endDate, pair, rows, startDate]
   );
   const rangeMove = useMemo(
-    () => buildCurveMoveForDates(rows, pair, endDate, startDate, curveMoveShapeToleranceBps[horizon]),
-    [endDate, horizon, pair, rows, startDate]
+    () => buildCurveMoveForDates(rows, pair, endDate, startDate, slopeToleranceBps),
+    [endDate, pair, rows, slopeToleranceBps, startDate]
   );
   const episodes = useMemo(() => buildEpisodes(timeline), [timeline]);
   const spreadSeries = useMemo<SpreadChartPoint[]>(
@@ -301,7 +307,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
       return {
         ...point,
         regimeType,
-        ...(regimeType ? { [regimeSeriesKey(regimeType)]: point.spreadBps } : {})
+        ...(regimeType && regimeType !== "Neutral / unclassified" ? { [regimeSeriesKey(regimeType)]: point.spreadBps } : {})
       };
     }),
     [episodes, rawSpreadSeries]
@@ -313,6 +319,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
   const [pinnedRegime, setPinnedRegime] = useState<CurveMoveType | null>(null);
 
   useEffect(() => {
+    setSlopeToleranceBps(curveMoveShapeToleranceBps[horizon]);
     setAsOfDate((current) => !current || current < startDate || current > endDate ? endDate : current);
     setCustomReferenceDate((current) => !current || current < startDate || current >= endDate ? startDate : current);
     setSelectedEpisodeId(null);
@@ -328,12 +335,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
     () => findPairObservationOnOrBefore(rows, pair, asOfDate),
     [asOfDate, pair, rows]
   );
-  const analysisToleranceBps = useMemo(() => {
-    if (!analysisAsOf || analysisWindow === "1W") return curveMoveShapeToleranceBps["1W"];
-    return calendarDaySpan(analysisReferenceTarget, analysisAsOf.date) <= 11
-      ? curveMoveShapeToleranceBps["1W"]
-      : curveMoveShapeToleranceBps["1M"];
-  }, [analysisAsOf, analysisReferenceTarget, analysisWindow]);
+  const analysisToleranceBps = slopeToleranceBps;
   const analysisMove = useMemo(
     () => analysisAsOf
       ? buildCurveMoveForDates(rows, pair, analysisAsOf.date, analysisReferenceTarget, analysisToleranceBps)
@@ -345,6 +347,10 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
   const rangeEndPoint = [...spreadSeries].reverse().find((point) => point.spreadBps !== null);
   const counts = useMemo(
     () => Object.fromEntries(curveMoveTypes.map((type) => [type, timeline.filter((point) => point.type === type).length])) as Record<CurveMoveType, number>,
+    [timeline]
+  );
+  const neutralCount = useMemo(
+    () => timeline.filter((point) => point.type === "Neutral / unclassified").length,
     [timeline]
   );
   const selectedWindow = useMemo<SelectedRegimeWindow | null>(
@@ -386,7 +392,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
     <article className="panel regime-panel" data-pinned-regime={pinnedRegime ? regimeDomKey[pinnedRegime] : undefined}>
       <div className="panel__header">
         <div>
-          <p className="eyebrow">Historical curve regimes</p>
+          <p className="eyebrow">Ex-post historical curve regimes</p>
           <h3>{pair.longLabel} regime map</h3>
         </div>
         <span className="panel__meta">{horizon === "1W" ? "Weekly" : "Monthly"} calendar intervals</span>
@@ -464,6 +470,28 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
             />
           </div>
         ) : null}
+        <div className="regime-analysis-controls__tolerance">
+          <div className="regime-field-label">
+            <span>Slope tolerance</span>
+            <HelpTip label="Project-defined absolute slope-change threshold used to separate near-parallel moves from steepening or flattening. Changing it recomputes every visible count." />
+          </div>
+          <div className="regime-analysis-window" aria-label="Slope tolerance sensitivity">
+            {slopeToleranceOptions.map((value) => (
+              <button
+                className={slopeToleranceBps === value ? "regime-analysis-window__button regime-analysis-window__button--active" : "regime-analysis-window__button"}
+                type="button"
+                key={value}
+                aria-pressed={slopeToleranceBps === value}
+                onClick={() => {
+                  setSlopeToleranceBps(value);
+                  setSelectedEpisodeId(null);
+                }}
+              >
+                {value} bps
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="regime-summary">
@@ -485,7 +513,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
       </div>
 
       <div className="regime-key__intro" id="regime-color-key-title">
-        <span><strong>Regime encoding</strong> · Cool = average yield lower · Warm = average yield higher/unchanged · Glyph and stroke = slope direction · <i aria-hidden="true" /> Gray = open</span>
+        <span><strong>Regime encoding</strong> · Cool = pair average lower · Warm = pair average higher · Glyph and stroke = slope direction · <i aria-hidden="true" /> Gray = neutral or open</span>
         <div className="regime-key__scope">
           <button
             type="button"
@@ -495,7 +523,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
           >
             All regimes
           </button>
-          <span>Counts: completed {noun}s</span>
+          <span>Six directional regimes · {neutralCount} neutral excluded · completed {noun}s</span>
         </div>
       </div>
       <div className="regime-key" aria-labelledby="regime-color-key-title">
@@ -503,7 +531,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
           <div className="regime-key__group" key={group.label} data-shape={group.shape}>
             <div className="regime-key__heading">
               <strong>{group.label}</strong>
-              <span>{group.rule(curveMoveShapeToleranceBps[horizon], pair.label.replaceAll(" ", ""))}</span>
+              <span>{group.rule(slopeToleranceBps, pair.label.replaceAll(" ", ""))}</span>
             </div>
             <div className="regime-key__moves">
               {group.moves.map((move) => {
@@ -699,7 +727,7 @@ export function CurveRegimeTimeline({ rows, pair, startDate, endDate, horizon }:
       <div className="spread-note">
         <Info size={15} aria-hidden="true" />
         <span>
-          The chart highlight is the selected date-to-date comparison; the ribbon is completed calendar-period history. Pair average move is the average of the selected-tenor yield changes; pair slope change is the change in the long-minus-short spread. Bull/bear follows the pair average move; an exactly zero average uses the nonnegative bear/higher tie-break. Near-parallel applies only when the pair&apos;s slope change is within the stated tolerance, not to the full Treasury curve.
+          Colors are ex-post classifications of completed calendar periods, not contemporaneous trading signals. The chart highlight is the selected date-to-date comparison; the ribbon is completed-period history. Pair average move is the average of the selected-tenor yield changes; pair slope change is the change in the long-minus-short spread. A positive pair average is bear/higher, a negative average is bull/lower, and an exactly zero average is neutral and excluded from the six directional counts. Near-parallel applies only when the pair&apos;s slope change is within the stated project-defined tolerance, not to the full Treasury curve.
         </span>
       </div>
     </article>

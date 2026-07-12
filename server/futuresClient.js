@@ -253,7 +253,7 @@ const fetchSparkPayload = async (rangeKey) => {
             latestSessionOnly: true,
             seriesMode: "latest-session",
             warnings: [
-              "No bars were returned for the 1-day request; showing the latest available CME trade session from Yahoo's 5-day chart history. Changes compare the latest bar with the final available bar from the prior CME trade session."
+              "No bars were returned for the 1-day request; showing each contract's latest available CME trade session from Yahoo's 5-day chart history. A change is shown only when a prior CME trade-session bar is available."
             ]
           };
         }
@@ -339,6 +339,18 @@ const priorCmeSessionClose = (series) => {
   return null;
 };
 
+const sessionSeriesForTradeDate = (series, tradeDate) => tradeDate
+  ? series.filter((point) => cmeTradeDateKey(point.timestamp) === tradeDate)
+  : [];
+
+const validMetaRange = (meta, price) => {
+  const low = meta?.regularMarketDayLow;
+  const high = meta?.regularMarketDayHigh;
+  return isFiniteNumber(low) && isFiniteNumber(high) && low <= price && price <= high
+    ? { low, high }
+    : null;
+};
+
 const normalizeInstrument = (definition, result, options) => {
   const chart = result?.response?.[0];
   const meta = chart?.meta;
@@ -348,22 +360,43 @@ const normalizeInstrument = (definition, result, options) => {
 
   const fullSeries = normalizeSeries(chart);
   const series = options.latestSessionOnly ? latestCmeSessionSeries(fullSeries) : fullSeries;
-  const latestSeriesPrice = series.at(-1)?.price;
-  const price = isFiniteNumber(meta.regularMarketPrice) ? meta.regularMarketPrice : latestSeriesPrice;
+  const latestSeriesPoint = series.at(-1);
+  const metaPrice = isFiniteNumber(meta.regularMarketPrice) ? meta.regularMarketPrice : null;
+  const price = latestSeriesPoint?.price ?? metaPrice;
   const fallbackPreviousClose = isFiniteNumber(meta.previousClose) ? meta.previousClose : meta.chartPreviousClose;
-  const previousClose = options.latestSessionOnly
-    ? priorCmeSessionClose(fullSeries) ?? fallbackPreviousClose
+  const previousCloseCandidate = options.latestSessionOnly
+    ? priorCmeSessionClose(fullSeries)
     : fallbackPreviousClose;
-  if (!isFiniteNumber(price) || !isFiniteNumber(previousClose) || previousClose <= 0) {
-    throw new Error(`${definition.symbol} is missing a valid price or previous close`);
+  const previousClose = isFiniteNumber(previousCloseCandidate) && previousCloseCandidate > 0
+    ? previousCloseCandidate
+    : null;
+  if (!isFiniteNumber(price)) {
+    throw new Error(`${definition.symbol} is missing a valid price`);
   }
 
-  const priceChange = round(Math.round((price - previousClose) / definition.minTick) * definition.minTick, 8);
-  const priceChangePct = round((priceChange / previousClose) * 100, 6);
-  const quoteTimeMs = isFiniteNumber(meta.regularMarketTime)
-    ? meta.regularMarketTime * 1000
-    : series.at(-1)?.timestamp ?? null;
+  const priceChange = previousClose === null
+    ? null
+    : round(Math.round((price - previousClose) / definition.minTick) * definition.minTick, 8);
+  const priceChangePct = priceChange === null ? null : round((priceChange / previousClose) * 100, 6);
+  const quoteTimeMs = latestSeriesPoint?.timestamp
+    ?? (isFiniteNumber(meta.regularMarketTime) ? meta.regularMarketTime * 1000 : null);
+  const tradeDate = isFiniteNumber(quoteTimeMs) ? cmeTradeDateKey(quoteTimeMs) : null;
+  const sessionSeries = sessionSeriesForTradeDate(fullSeries, tradeDate);
+  const sessionPrices = sessionSeries.map((point) => point.price);
+  const metaRange = validMetaRange(meta, price);
+  const dayLow = sessionPrices.length ? Math.min(...sessionPrices) : metaRange?.low ?? null;
+  const dayHigh = sessionPrices.length ? Math.max(...sessionPrices) : metaRange?.high ?? null;
+  const metaQuoteTimeMs = isFiniteNumber(meta.regularMarketTime) ? meta.regularMarketTime * 1000 : null;
+  const metaTradeDate = isFiniteNumber(metaQuoteTimeMs) ? cmeTradeDateKey(metaQuoteTimeMs) : null;
   const marketState = deriveCmeTreasurySessionState(options.nowMs, quoteTimeMs);
+  const comparisonLabel = previousClose === null
+    ? "Unavailable"
+    : options.latestSessionOnly ? "Prior session last" : "Prior close";
+  const dataQuality = !series.length
+    ? "snapshot-only"
+    : series.length < 2 || previousClose === null
+      ? "insufficient-history"
+      : "verified-session";
 
   return {
     ...definition,
@@ -374,13 +407,17 @@ const normalizeInstrument = (definition, result, options) => {
     previousClose,
     priceChange,
     priceChangePct,
-    changeThirtySeconds: round(priceChange * 32, 4),
-    dayHigh: isFiniteNumber(meta.regularMarketDayHigh) ? meta.regularMarketDayHigh : null,
-    dayLow: isFiniteNumber(meta.regularMarketDayLow) ? meta.regularMarketDayLow : null,
-    volume: isFiniteNumber(meta.regularMarketVolume) ? meta.regularMarketVolume : null,
+    changeThirtySeconds: priceChange === null ? null : round(priceChange * 32, 4),
+    comparisonLabel,
+    dayHigh,
+    dayLow,
+    volume: metaTradeDate === tradeDate && isFiniteNumber(meta.regularMarketVolume) ? meta.regularMarketVolume : null,
     quoteTime: isFiniteNumber(quoteTimeMs) ? new Date(quoteTimeMs).toISOString() : null,
+    tradeDate,
+    sessionBars: sessionSeries.length,
+    dataQuality,
     marketState,
-    rateDirection: priceChange > 0 ? "lower" : priceChange < 0 ? "higher" : "unchanged",
+    rateDirection: priceChange === null ? "unavailable" : priceChange > 0 ? "lower" : priceChange < 0 ? "higher" : "unchanged",
     series
   };
 };
@@ -418,6 +455,21 @@ export const normalizeFuturesPayload = (payload, requestedRange = "1D", options 
     .flatMap((instrument) => instrument.series.map((point) => point.timestamp))
     .sort((left, right) => left - right)
     .at(-1);
+  const datedInstruments = instruments.filter((instrument) => instrument.tradeDate);
+  const tradeDates = [...new Set(datedInstruments.map((instrument) => instrument.tradeDate))].sort();
+  const sessionCoherence = tradeDates.length === 1 && datedInstruments.length === instruments.length
+    ? "coherent"
+    : tradeDates.length || datedInstruments.length ? "mixed" : "unavailable";
+
+  if (sessionCoherence === "mixed") {
+    warnings.push("Contracts are not synchronized to one CME trade date. Read each contract's date and freshness independently; no aggregate live-market state is implied.");
+  }
+
+  for (const instrument of instruments) {
+    if (instrument.dataQuality === "insufficient-history") {
+      warnings.push(`${instrument.symbol} has insufficient verified session history; no directional change is reported unless a prior-session bar is available.`);
+    }
+  }
 
   return {
     source: {
@@ -426,7 +478,9 @@ export const normalizeFuturesPayload = (payload, requestedRange = "1D", options 
       delayed: true,
       displayUse: "Indicative intraday market reference only",
       seriesMode: normalizationOptions.seriesMode,
-      seriesAsOf: isFiniteNumber(latestSeriesTimestamp) ? new Date(latestSeriesTimestamp).toISOString() : null
+      seriesAsOf: isFiniteNumber(latestSeriesTimestamp) ? new Date(latestSeriesTimestamp).toISOString() : null,
+      latestTradeDate: tradeDates.at(-1) ?? null,
+      sessionCoherence
     },
     range: {
       key: rangeKey,

@@ -9,6 +9,9 @@ export interface MacroEvent {
   startDate: string;
   endDate?: string;
   description: string;
+  sourceName: string;
+  sourceUrl: string;
+  windowBasis: string;
 }
 
 export const maturityKeys: ResearchMaturityKey[] = ["2Y", "5Y", "10Y", "30Y"];
@@ -24,6 +27,8 @@ export type CurveMoveType =
   | "Bear flattening"
   | "Parallel shift higher"
   | "Parallel shift lower";
+
+export type CurveMoveClassification = CurveMoveType | "Neutral / unclassified";
 
 export const curveMoveTypes: CurveMoveType[] = [
   "Bull steepening",
@@ -65,7 +70,7 @@ export interface CurveMove {
   spreadDeltaBps: number;
   levelDeltaBps: number;
   shapeToleranceBps: number;
-  type: CurveMoveType;
+  type: CurveMoveClassification;
   rationale: string;
 }
 
@@ -78,7 +83,7 @@ export interface CurveRegimePoint {
   spreadDeltaBps: number;
   levelDeltaBps: number;
   shapeToleranceBps: number;
-  type: CurveMoveType;
+  type: CurveMoveClassification;
   rationale: string;
 }
 
@@ -94,18 +99,24 @@ export const curvePairs: CurvePair[] = [
 export const macroEvents: MacroEvent[] = [
   {
     id: "volcker",
-    title: "Volcker tightening peak",
+    title: "Early-1980s disinflation window",
     category: "Policy",
     startDate: "1981-06-01",
     endDate: "1982-11-30",
-    description: "High-rate disinflation period and early-1980s recession."
+    description: "Project-defined policy window spanning high-rate disinflation and the early-1980s recession.",
+    sourceName: "Federal Reserve History",
+    sourceUrl: "https://www.federalreservehistory.org/essays/anti-inflation-measures",
+    windowBasis: "Context window; endpoints are project-defined, not a canonical cycle definition."
   },
   {
     id: "black-monday",
     title: "Black Monday",
     category: "Market",
     startDate: "1987-10-19",
-    description: "Cross-asset risk shock and policy liquidity response."
+    description: "Dated market disruption used as a rates-context marker.",
+    sourceName: "Federal Reserve History",
+    sourceUrl: "https://www.federalreservehistory.org/essays/stock-market-crash-of-1987",
+    windowBasis: "Single dated event."
   },
   {
     id: "fed-1994",
@@ -113,7 +124,10 @@ export const macroEvents: MacroEvent[] = [
     category: "Policy",
     startDate: "1994-02-04",
     endDate: "1995-02-01",
-    description: "Rapid tightening cycle that repriced duration risk."
+    description: "FOMC decision-date window for the 1994 tightening cycle.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/fomc/19940204default.htm",
+    windowBasis: "First and final policy-decision dates in the selected cycle."
   },
   {
     id: "asian-ltcm",
@@ -121,22 +135,31 @@ export const macroEvents: MacroEvent[] = [
     category: "Crisis",
     startDate: "1997-07-02",
     endDate: "1998-10-15",
-    description: "Asian financial crisis, Russia default, and LTCM rescue."
+    description: "Composite context window covering Asian financial stress, Russia's default, and LTCM.",
+    sourceName: "Federal Reserve History",
+    sourceUrl: "https://www.federalreservehistory.org/essays/ltcm-near-failure",
+    windowBasis: "Project-defined composite window; not a single event."
   },
   {
     id: "dot-com",
-    title: "Dot-com crash",
+    title: "Dot-com drawdown window",
     category: "Market",
     startDate: "2000-03-10",
     endDate: "2002-10-09",
-    description: "Growth shock from technology-bubble unwind and early-2000s easing cycle."
+    description: "Context window anchored to the Nasdaq Composite peak and subsequent trough.",
+    sourceName: "FRED / Nasdaq Composite",
+    sourceUrl: "https://fred.stlouisfed.org/series/NASDAQCOM",
+    windowBasis: "Equity-index anchors used only for contextual comparison; no causal claim."
   },
   {
     id: "911",
     title: "September 11 attacks",
     category: "Geopolitical",
     startDate: "2001-09-11",
-    description: "Geopolitical shock and flight-to-quality episode."
+    description: "Dated geopolitical event used as a rates-context marker.",
+    sourceName: "National September 11 Memorial",
+    sourceUrl: "https://www.911memorial.org/911-faqs",
+    windowBasis: "Single dated event; chart line uses the next available CMT observation when markets are closed."
   },
   {
     id: "fed-2004",
@@ -144,15 +167,21 @@ export const macroEvents: MacroEvent[] = [
     category: "Policy",
     startDate: "2004-06-30",
     endDate: "2006-06-29",
-    description: "Measured-pace tightening from 1% to 5.25% fed funds target."
+    description: "FOMC decision-date window for measured-pace tightening from 1% to 5.25%.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20060629a.htm",
+    windowBasis: "First and final policy-decision dates in the selected cycle."
   },
   {
     id: "gfc",
-    title: "Global Financial Crisis",
+    title: "Global Financial Crisis window",
     category: "Crisis",
     startDate: "2007-08-09",
     endDate: "2009-03-09",
-    description: "Credit crisis, bank failures, ZIRP, and extraordinary policy easing."
+    description: "Project-defined context window spanning funding stress, bank failures, and extraordinary policy easing.",
+    sourceName: "Federal Reserve History",
+    sourceUrl: "https://www.federalreservehistory.org/essays/great-recession-and-its-aftermath",
+    windowBasis: "Project-defined crisis window; endpoints are contextual rather than canonical."
   },
   {
     id: "taper-tantrum",
@@ -160,15 +189,21 @@ export const macroEvents: MacroEvent[] = [
     category: "Policy",
     startDate: "2013-05-22",
     endDate: "2013-09-18",
-    description: "Sharp repricing after the Fed signaled potential QE tapering."
+    description: "Policy-signaling window from the May testimony through the September FOMC decision.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/newsevents/testimony/bernanke20130522a.htm",
+    windowBasis: "Selected policy communication and decision dates."
   },
   {
     id: "debt-ceiling-2011",
-    title: "2011 debt-ceiling crisis",
+    title: "S&P downgrade / debt-limit stress",
     category: "Policy",
     startDate: "2011-08-05",
     endDate: "2011-08-08",
-    description: "S&P U.S. sovereign downgrade and safe-haven Treasury rally during fiscal stress."
+    description: "Post-debt-limit context window beginning with the U.S. sovereign downgrade.",
+    sourceName: "U.S. Government Accountability Office",
+    sourceUrl: "https://www.gao.gov/products/gao-12-701",
+    windowBasis: "Downgrade and immediate market-response dates; not the full debt-limit negotiation."
   },
   {
     id: "fed-2015",
@@ -176,7 +211,10 @@ export const macroEvents: MacroEvent[] = [
     category: "Policy",
     startDate: "2015-12-16",
     endDate: "2018-12-19",
-    description: "Post-GFC policy-normalization cycle from the first December 2015 increase through the December 2018 decision."
+    description: "FOMC decision-date window from the first post-GFC increase through December 2018.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20151216a.htm",
+    windowBasis: "First and final policy-decision dates in the selected cycle."
   },
   {
     id: "tariffs-2018",
@@ -184,36 +222,51 @@ export const macroEvents: MacroEvent[] = [
     category: "Geopolitical",
     startDate: "2018-03-22",
     endDate: "2019-08-01",
-    description: "Trade-policy escalation and reassessment of growth and inflation risks."
+    description: "Project-defined trade-policy escalation window used for rates context.",
+    sourceName: "White House archive",
+    sourceUrl: "https://trumpwhitehouse.archives.gov/presidential-actions/presidential-memorandum-actions-united-states-related-section-301-investigation/",
+    windowBasis: "Selected policy-announcement endpoints; no single-cause claim."
   },
   {
     id: "repo-2019",
     title: "Repo market stress",
     category: "Market",
     startDate: "2019-09-17",
-    description: "Short-term funding stress and Fed balance sheet response."
+    description: "Dated short-term funding disruption used as a rates-context marker.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/monetarypolicy/bsd-monetary-policy-tools-201911.htm",
+    windowBasis: "Single dated funding-market onset marker."
   },
   {
     id: "covid",
-    title: "COVID-19 shock",
+    title: "COVID market-policy response window",
     category: "Crisis",
     startDate: "2020-02-19",
     endDate: "2020-04-09",
-    description: "Pandemic risk-off, emergency Fed cuts, QE, and fiscal response."
+    description: "Project-defined window spanning the initial market break and emergency policy response.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/publications/2020-monetary-policy.htm",
+    windowBasis: "Selected market and policy anchors; not a pandemic onset definition."
   },
   {
     id: "treasury-methodology-2021",
     title: "Treasury curve-method change",
     category: "Methodology",
     startDate: "2021-12-06",
-    description: "Treasury began its monotone-convex method. Earlier quasi-cubic Hermite rates remain official, but long-run comparisons should recognize the methodology regime."
+    description: "Treasury began its monotone-convex method. Earlier quasi-cubic Hermite rates remain official.",
+    sourceName: "U.S. Treasury",
+    sourceUrl: "https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/treasury-yield-curve-methodology",
+    windowBasis: "Official methodology effective date."
   },
   {
     id: "russia-ukraine",
     title: "Russia-Ukraine war",
     category: "Geopolitical",
     startDate: "2022-02-24",
-    description: "Russia's invasion of Ukraine and subsequent energy, inflation, and geopolitical-risk repricing."
+    description: "Dated geopolitical event used as a rates-context marker.",
+    sourceName: "United Nations",
+    sourceUrl: "https://press.un.org/en/2022/sc14803.doc.htm",
+    windowBasis: "Single dated invasion marker; no single-cause market claim."
   },
   {
     id: "fed-2022",
@@ -221,7 +274,10 @@ export const macroEvents: MacroEvent[] = [
     category: "Policy",
     startDate: "2022-03-16",
     endDate: "2023-07-26",
-    description: "FOMC tightening from a 0%-0.25% target range in March 2022 to 5.25%-5.50% in July 2023."
+    description: "FOMC decision-date window from a 0%-0.25% target range to 5.25%-5.50%.",
+    sourceName: "Federal Reserve",
+    sourceUrl: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm",
+    windowBasis: "First and final policy-decision dates in the selected cycle."
   },
   {
     id: "svb",
@@ -229,14 +285,20 @@ export const macroEvents: MacroEvent[] = [
     category: "Crisis",
     startDate: "2023-03-10",
     endDate: "2023-05-01",
-    description: "SVB failure, deposit stress, and policy backstops."
+    description: "Project-defined window from SVB's failure through First Republic's resolution.",
+    sourceName: "FDIC",
+    sourceUrl: "https://www.fdic.gov/resources/resolutions/bank-failures/failed-bank-list/silicon-valley.html",
+    windowBasis: "Official bank-failure dates used as window endpoints."
   },
   {
     id: "tariffs-2025",
     title: "2025 tariff announcements",
     category: "Geopolitical",
     startDate: "2025-04-02",
-    description: "April 2 trade-policy announcement and subsequent inflation, growth, and policy uncertainty."
+    description: "Dated trade-policy announcement used as a rates-context marker.",
+    sourceName: "White House",
+    sourceUrl: "https://www.whitehouse.gov/presidential-actions/2025/04/regulating-imports-with-a-reciprocal-tariff-to-rectify-trade-practices-that-contribute-to-large-and-persistent-annual-united-states-goods-trade-deficits/",
+    windowBasis: "Single official announcement date; no causal attribution."
   }
 ];
 
@@ -369,29 +431,25 @@ export const classifyCurveMove = (
   spreadDeltaBps: number,
   levelDeltaBps: number,
   shapeToleranceBps = curveMoveShapeToleranceBps["1W"]
-): CurveMoveType => {
+): CurveMoveClassification => {
+  if (levelDeltaBps === 0) return "Neutral / unclassified";
+
   if (Math.abs(spreadDeltaBps) <= shapeToleranceBps) {
-    return levelDeltaBps >= 0 ? "Parallel shift higher" : "Parallel shift lower";
+    return levelDeltaBps > 0 ? "Parallel shift higher" : "Parallel shift lower";
   }
 
   if (spreadDeltaBps > 0) {
-    return levelDeltaBps >= 0 ? "Bear steepening" : "Bull steepening";
+    return levelDeltaBps > 0 ? "Bear steepening" : "Bull steepening";
   }
 
-  return levelDeltaBps >= 0 ? "Bear flattening" : "Bull flattening";
+  return levelDeltaBps > 0 ? "Bear flattening" : "Bull flattening";
 };
 
-export const movementRationale = (type: CurveMoveType, pair: CurvePair, levelDeltaBps?: number) => {
+export const movementRationale = (type: CurveMoveClassification, pair: CurvePair, levelDeltaBps?: number) => {
   const segment = `${pair.longKey}/${pair.shortKey}`;
 
-  if (levelDeltaBps === 0) {
-    const shape = type.includes("steepening")
-      ? "steepened"
-      : type.includes("flattening")
-        ? "flattened"
-        : "remained inside the near-parallel slope tolerance";
-
-    return `${segment} ${shape} while the pair's average yield change was exactly zero. The exhaustive six-state taxonomy applies its disclosed nonnegative bear/higher tie-break; this offsetting move does not identify a single economic cause.`;
+  if (type === "Neutral / unclassified" || levelDeltaBps === 0) {
+    return `${segment} had an exactly zero pair-average yield change. Bull/bear direction is indeterminate, so this observation is excluded from the six directional regime counts.`;
   }
 
   switch (type) {
@@ -545,7 +603,8 @@ export const buildCurveRegimeTimeline = (
   pair: CurvePair,
   startDate: string,
   endDate: string,
-  horizon: CurveMoveHorizon
+  horizon: CurveMoveHorizon,
+  toleranceBps = curveMoveShapeToleranceBps[horizon]
 ): CurveRegimePoint[] => {
   // Regime labels describe non-overlapping calendar periods, not a rolling label for
   // every daily observation. This preserves the interpretation of a weekly/monthly move.
@@ -557,7 +616,7 @@ export const buildCurveRegimeTimeline = (
 
   const anchors = [...periodEnds.values()].sort((left, right) => left.date.localeCompare(right.date));
   const terminalAnchorIndex = anchors.length - 1;
-  const shapeToleranceBps = curveMoveShapeToleranceBps[horizon];
+  const shapeToleranceBps = toleranceBps;
 
   return anchors.flatMap((asOf, index) => {
     const reference = anchors[index - 1];

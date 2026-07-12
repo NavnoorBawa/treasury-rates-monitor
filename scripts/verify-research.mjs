@@ -23,7 +23,7 @@ for (const [spreadDeltaBps, levelDeltaBps, expected] of expectedClassifications)
   assert.equal(classifyCurveMove(spreadDeltaBps, levelDeltaBps, 3), expected);
 }
 
-assert.equal(classifyCurveMove(4, 0, 3), "Bear steepening", "Zero pair average should use the disclosed nonnegative tie-break");
+assert.equal(classifyCurveMove(4, 0, 3), "Neutral / unclassified", "Zero pair average must not be forced into a bull or bear regime");
 
 const pair = curvePairs.find((item) => item.key === "10Y2Y");
 assert.ok(pair, "10Y-2Y curve pair is required");
@@ -51,7 +51,7 @@ assert.equal(move.longDeltaBps, 20);
 assert.equal(move.spreadDeltaBps, 10);
 assert.equal(move.levelDeltaBps, 15);
 assert.equal(move.type, "Bear steepening");
-assert.match(movementRationale("Bear steepening", pair, 0), /average yield change was exactly zero/);
+assert.match(movementRationale("Neutral / unclassified", pair, 0), /excluded from the six directional regime counts/);
 
 const statsRows = [
   row("2026-01-02", 4, 4.2, 4.5, 4.8),
@@ -78,6 +78,15 @@ const completedMonthlyTimeline = buildCurveRegimeTimeline(timelineRows, pair, "2
 assert.equal(completedMonthlyTimeline.length, 1, "Open terminal months must remain unclassified");
 assert.equal(completedMonthlyTimeline[0].comparisonDate, "2026-01-30");
 assert.equal(completedMonthlyTimeline[0].date, "2026-02-27");
+
+const neutralTimelineRows = [
+  row("2026-01-30", 4, 4.2, 4.5, 4.8),
+  row("2026-02-27", 4, 4.2, 4.5, 4.8),
+  row("2026-03-10", 4.1, 4.3, 4.6, 4.9)
+];
+const neutralMonthlyTimeline = buildCurveRegimeTimeline(neutralTimelineRows, pair, "2026-01-01", "2026-03-10", "1M");
+assert.equal(neutralMonthlyTimeline.length, 1);
+assert.equal(neutralMonthlyTimeline[0].type, "Neutral / unclassified", "No-move periods must be excluded from the six directional regimes");
 
 assert.equal(
   getEventMarkerDate(

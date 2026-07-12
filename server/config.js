@@ -102,11 +102,12 @@ export const TREASURY_FUTURES = [
   },
   {
     key: "30Y",
-    symbol: "ZB=F",
-    label: "Treasury Bond",
-    shortLabel: "30Y",
+    symbol: "UB=F",
+    label: "Ultra U.S. Treasury Bond",
+    shortLabel: "30Y proxy",
+    sectorNote: "25Y+ deliverable basket",
     minTick: 1 / 32,
-    yahooPageUrl: "https://finance.yahoo.com/quote/ZB%3DF/"
+    yahooPageUrl: "https://finance.yahoo.com/quote/UB%3DF/"
   }
 ];
 

@@ -13,9 +13,9 @@ The backend reads the official U.S. Treasury XML feed for Daily Treasury Par Yie
 
 No API key is required. The server fetches the current New York calendar year plus the prior year, normalizes the XML, computes daily changes against the previous Treasury observation, and caches the result for 10 minutes by default. The frontend refreshes automatically every 15 minutes while open.
 
-Treasury CMTs are official daily par-yield observations, not transaction prices or an intraday fixing. Treasury derives them from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM ET each trading day and usually publishes them by 6:00 PM ET, so no free official intraday CMT update exists. Faster polling would not make the underlying official curve fresher.
+Treasury CMTs are official daily par-yield observations, not transaction prices or intraday quotes. Treasury derives them from indicative bid-side quotations obtained by the Federal Reserve Bank of New York at or near 3:30 PM ET each trading day and usually publishes them by 6:00 PM ET, so no free official intraday CMT update exists. Faster polling would not make the underlying official curve fresher.
 
-The separate Futures tab uses delayed Yahoo Finance market data for the front CBOT 2-Year Note (`ZT=F`), 5-Year Note (`ZF=F`), 10-Year Note (`ZN=F`), and Treasury Bond (`ZB=F`) futures contracts. These are traded prices, not CMT yields. The server requests all four contracts in one allowlisted Yahoo spark query, caches responses for five minutes, and falls back to Yahoo's embedded 24-hour quote-page series if the chart API is rate-limited. Yahoo/yfinance is an unofficial convenience layer suitable for this educational market-reference view, not an authoritative or licensed professional feed. A commercial trading deployment should replace it with licensed CME data.
+The separate Futures tab uses delayed Yahoo Finance market data for CBOT 2-Year Note (`ZT=F`), 5-Year Note (`ZF=F`), 10-Year Note (`ZN=F`), and Ultra U.S. Treasury Bond (`UB=F`) futures. Ultra Bond's 25Y+ deliverable basket is used only as a 30Y-sector proxy. These are traded prices, not CMT yields. The server tries an allowlisted multi-symbol spark request, per-symbol chart requests, a five-day latest-session recovery for empty one-day responses, and finally Yahoo quote-page data. Each contract is normalized to its own CME trade date; stale or mixed-date contracts are disclosed individually, and no change is shown without a verified comparison observation. Yahoo/yfinance is an unofficial convenience layer suitable for this educational market-reference view, not an authoritative or licensed professional feed. A commercial trading deployment should replace it with licensed CME data.
 
 FRED was reviewed as a possible primary source because it is academically familiar and reliable. The app intentionally keeps Treasury as primary for current values because Treasury is the direct official publisher of the Daily Treasury Par Yield Curve Rates, while FRED republishes the relevant DGS series from the Federal Reserve/H.15 ecosystem and its official API requires an API key.
 
@@ -30,13 +30,13 @@ This gives reliable long-run daily history back to the earliest available H.15 o
 
 - Long-run historical data for 2Y, 5Y, 10Y, and 30Y Treasury yields.
 - Trader-style workspace tabs: Market, Futures, Compare, History, and Regimes. Only the active view is shown, avoiding a stacked-scroll layout.
-- A delayed CBOT Treasury-futures tape for `ZT=F`, `ZF=F`, `ZN=F`, and `ZB=F`, with a dependable 1D intraday chart, previous-close moves in 32nds, session range, reported volume, quote timestamps, and explicit inverse price/yield direction. Futures data is isolated from every official CMT calculation, spread, regime, statistic, and export.
+- A delayed CBOT Treasury-futures tape for `ZT=F`, `ZF=F`, `ZN=F`, and `UB=F`, with per-contract trade date and freshness, verified session range, conditional prior-session comparisons in 32nds, quote timestamps, and explicit inverse price/yield direction. Incoherent provider snapshots are disclosed rather than presented as one live market state. Futures data is isolated from every official CMT calculation, spread, regime, statistic, and export.
 - Validated shareable workspace URLs preserve the active view and relevant range, dates, spread, curve pair, history section, and weekly/monthly interval. The Copy view action writes the normalized setup URL to the clipboard; malformed or out-of-sample parameters fall back to valid H.15 dates and supported controls.
 - Date-range presets: 1Y, 5Y, 10Y, 20Y, Max, plus custom start/end dates.
 - Six core 2Y/5Y/10Y/30Y curve combinations: 5Y-2Y, 10Y-2Y, 30Y-2Y, 10Y-5Y, 30Y-5Y, and 30Y-10Y.
 - Date-to-date yield curve comparison with custom as-of/reference dates and 1W, 1M, 1Y, and range-start shortcuts.
-- Macro event markers with focus actions that apply the event window and return directly to the rates/spreads view.
-- A weekly or monthly color-coded curve-regime ribbon for each of the six segments. Classifications use non-overlapping completed calendar intervals, while the daily spread remains a separate line. The six classifications are bull steepening, bear steepening, bull flattening, bear flattening, parallel shift higher, and parallel shift lower. Near-parallel uses a disclosed 3 bps weekly or 5 bps monthly slope tolerance; open periods remain unclassified. The color key can preview or pin one regime across the chart and ribbon, and the selected date-to-date comparison is overlaid separately from completed calendar-period history.
+- Sourced macro event annotations with explicit window conventions and focus actions that apply the contextual window and return directly to the rates/spreads view. Markers do not claim causality.
+- A weekly or monthly color-coded curve-regime ribbon for each of the six segments. Classifications are ex-post descriptions of non-overlapping completed calendar intervals, not contemporaneous signals. The six directional classifications are bull steepening, bear steepening, bull flattening, bear flattening, parallel shift higher, and parallel shift lower. Near-parallel uses a disclosed project-defined 3 bps weekly or 5 bps monthly slope tolerance. Exact-zero pair-average moves are neutral and excluded from the six directional counts; open periods remain unclassified.
 - Selected-range CSV export containing dates, 2Y/5Y/10Y/30Y yields in percent per annum, and all six core curve spreads in basis points; every exported column declares its unit.
 - Selected-period statistics: last valid observation and date, min, max, average, annualized daily-change volatility, 1M/3M/1Y changes, last-value empirical CDF, and valid observation count. Lookback changes use the nearest valid observation on or before the calendar target even when it predates the visible range.
 - Light and dark themes for presentation use.
@@ -93,7 +93,7 @@ Returns:
 - `curve`: latest official curve points.
 - `history`: one-year historical series for each dashboard maturity.
 - `spreads`: all six current 2Y/5Y/10Y/30Y curve spreads with daily basis-point changes.
-- `source`: Treasury source links, latest official record date, previous record date, raw feed-metadata timestamp, and application retrieval timestamp. The interface displays retrieval time rather than presenting Atom metadata as a market observation time.
+- `source`: Treasury source links, latest official record date, previous record date, raw feed-metadata timestamp, retrieval timestamp, SHA-256 source fingerprint, and transformation version. The interface displays retrieval time rather than presenting Atom metadata as a market observation time.
 - `cache`: cache status (`hit`, `refresh`, or `stale`).
 
 `GET /api/history`
@@ -104,15 +104,15 @@ Returns:
 - `maturities`: maturity metadata used by the research charts.
 - `spreads`: spread definitions.
 - `availability`: first/last valid dates and observation counts by maturity.
-- `source`: H.15 source metadata, Treasury supplement status, and limitations note.
+- `source`: H.15 source metadata, Treasury supplement status, raw-source SHA-256 fingerprints, transformation version, and limitations note.
 - `cache`: cache status.
 
 `GET /api/futures?range=1D|5D|1M`
 
 Returns:
 
-- `instruments`: delayed front-contract prices for `ZT=F`, `ZF=F`, `ZN=F`, and `ZB=F`, including previous close, change, change in 32nds, percent change, day range, volume, quote time, inverse rate direction, and chart bars.
-- `range`: the validated range and actual provider interval. If Yahoo rate-limits a longer-range request, the server explicitly downgrades to its embedded 1D/5-minute fallback and returns a warning.
+- `instruments`: delayed front-contract prices for `ZT=F`, `ZF=F`, `ZN=F`, and `UB=F`, including nullable verified comparison, change in 32nds, session range, volume, quote time, CME trade date, per-contract freshness, inverse rate direction, and chart bars.
+- `range`: the validated range and actual provider interval. One-day requests can recover each contract's latest available session from five-day data; mixed trade dates and insufficient comparison history are explicit warnings.
 - `source`: Yahoo/CME attribution, delayed-reference status, retrieval time, and methodology links.
 - `warnings`: partial-symbol or provider-fallback disclosures.
 - `cache`: cache status.

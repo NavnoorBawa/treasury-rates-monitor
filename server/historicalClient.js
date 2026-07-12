@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { parse } from "csv-parse/sync";
 import {
   FED_H15_TREASURY_CMT_URL,
@@ -8,6 +9,8 @@ import {
   RESEARCH_SPREADS
 } from "./config.js";
 import { getTreasuryYieldData } from "./treasuryClient.js";
+
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
 const fetchWithTimeout = async (url, timeoutMs = 20000) => {
   const controller = new AbortController();
@@ -125,25 +128,27 @@ const mergeTreasuryLatest = async (rows) => {
 
     if (existingIndex >= 0) {
       rows[existingIndex] = { ...rows[existingIndex], ...latestTreasuryRow };
-      return { rows, supplementalSource: "Treasury XML replaced matching latest date." };
+      return { rows, supplementalSource: "Treasury XML replaced matching latest date.", supplementalContentSha256: treasuryData.source.contentSha256 };
     }
 
     const latestFedDate = rows.at(-1)?.date;
     if (latestFedDate && latestTreasuryRow.date > latestFedDate) {
       return {
         rows: [...rows, latestTreasuryRow].sort((a, b) => a.date.localeCompare(b.date)),
-        supplementalSource: "Treasury XML appended fresher latest official observation."
+        supplementalSource: "Treasury XML appended fresher latest official observation.",
+        supplementalContentSha256: treasuryData.source.contentSha256
       };
     }
 
-    return { rows, supplementalSource: "Federal Reserve H.15 contains the latest research observation." };
+    return { rows, supplementalSource: "Federal Reserve H.15 contains the latest research observation.", supplementalContentSha256: treasuryData.source.contentSha256 };
   } catch (error) {
     return {
       rows,
       supplementalSource:
         error instanceof Error
           ? `Treasury latest supplement unavailable: ${error.message}`
-          : "Treasury latest supplement unavailable."
+          : "Treasury latest supplement unavailable.",
+      supplementalContentSha256: null
     };
   }
 };
@@ -165,8 +170,9 @@ const buildAvailability = (rows) =>
 
 export async function getHistoricalYieldData() {
   const csv = await fetchWithTimeout(FED_H15_TREASURY_CMT_URL);
+  const h15ContentSha256 = sha256(csv);
   const parsedRows = parseFedCsv(csv);
-  const { rows, supplementalSource } = await mergeTreasuryLatest(parsedRows);
+  const { rows, supplementalSource, supplementalContentSha256 } = await mergeTreasuryLatest(parsedRows);
 
   return {
     source: {
@@ -175,6 +181,10 @@ export async function getHistoricalYieldData() {
       recordStartDate: rows[0]?.date ?? null,
       recordEndDate: rows.at(-1)?.date ?? null,
       supplementalSource,
+      h15ContentSha256,
+      supplementalContentSha256,
+      contentSha256: sha256(`${h15ContentSha256}|${supplementalContentSha256 ?? "none"}`),
+      transformationVersion: "h15-cmt-history-v2",
       note:
         "The observed 30Y CMT is intentionally unavailable from February 18, 2002 through February 8, 2006, the Treasury discontinuation/reintroduction interval; dependent 30Y spreads are null for the same period."
     },

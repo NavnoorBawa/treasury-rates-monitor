@@ -409,6 +409,13 @@ h3 {
   font-weight: 560;
 }
 
+.metric-card__change-unit {
+  color: var(--subtle);
+  font-size: 9px;
+  font-weight: 620;
+  white-space: nowrap;
+}
+
 .metric-card__change-context {
   color: var(--subtle);
   font-size: 10px;
@@ -827,7 +834,7 @@ h3 {
   background: var(--surface-panel);
   color: var(--ink);
   text-align: left;
-  cursor: pointer;
+  cursor: default;
   box-shadow: var(--shadow);
   transition:
     transform 170ms ease,
@@ -882,6 +889,59 @@ h3 {
   font-size: 12px;
   font-style: normal;
   font-weight: 700;
+}
+
+.event-card__basis {
+  color: var(--subtle);
+  line-height: 1.35;
+}
+
+.event-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.event-card__actions button,
+.event-card__actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--series-2y);
+  font-size: 10px;
+  font-weight: 720;
+  text-decoration: none;
+}
+
+.event-card__actions button {
+  padding: 0;
+  cursor: pointer;
+}
+
+.event-card__actions a {
+  color: var(--muted);
+}
+
+.event-card__actions button:hover,
+.event-card__actions a:hover {
+  color: var(--ink);
+}
+
+.event-section__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 9px 0 0;
+  color: var(--subtle);
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 .event-card--crisis {
@@ -1380,9 +1440,14 @@ h3 {
 }
 
 .regime-analysis-controls__date,
-.regime-analysis-controls__window {
+.regime-analysis-controls__window,
+.regime-analysis-controls__tolerance {
   display: grid;
   gap: 6px;
+}
+
+.regime-analysis-controls__tolerance {
+  flex: 0 1 auto;
 }
 
 .regime-analysis-controls__window {
@@ -3623,8 +3688,15 @@ h3 {
   }
 
   .regime-key__scope {
+    align-items: flex-start;
     justify-content: space-between;
     width: 100%;
+    white-space: normal;
+  }
+
+  .regime-key__scope > span {
+    min-width: 0;
+    text-align: right;
   }
 
   .regime-key__all {
@@ -3719,6 +3791,11 @@ h3 {
 .futures-session--stale i {
   background: var(--series-5y);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--series-5y) 14%, transparent);
+}
+
+.futures-session--mixed i {
+  background: var(--move-up);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--move-up) 14%, transparent);
 }
 
 .futures-warning {
@@ -3902,11 +3979,30 @@ h3 {
   color: var(--move-down);
 }
 
+.futures-contract__direction--unavailable {
+  color: var(--subtle);
+}
+
 .futures-contract__micro {
+  flex-wrap: wrap;
   margin-top: auto;
   color: var(--subtle);
   font-family: var(--font-number);
   font-size: 8px;
+}
+
+.futures-contract__state {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.futures-contract__state--open {
+  color: var(--move-down);
+}
+
+.futures-contract__state--stale {
+  color: var(--move-up);
 }
 
 .futures-layout {
@@ -4114,6 +4210,12 @@ h3 {
 
 .futures-source-strip {
   border-left-color: var(--series-10y);
+}
+
+.futures-source-strip span:last-child {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {

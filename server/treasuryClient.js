@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
 import {
   CURVE_MATURITIES,
@@ -16,6 +17,8 @@ const parser = new XMLParser({
   parseTagValue: true,
   trimValues: true
 });
+
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
 const asArray = (value) => {
   if (!value) return [];
@@ -201,7 +204,7 @@ export async function getTreasuryYieldData() {
   const feeds = await Promise.all(
     years.map(async (year) => {
       const xml = await fetchWithTimeout(buildYearUrl(year));
-      return parseYearFeed(xml, year);
+      return { ...parseYearFeed(xml, year), contentHash: sha256(xml) };
     })
   );
 
@@ -220,7 +223,9 @@ export async function getTreasuryYieldData() {
       previousRecordDate: previous.date,
       feedUpdatedAt,
       retrievedAt: new Date().toISOString(),
-      historyWindowDays: HISTORY_WINDOW_DAYS
+      historyWindowDays: HISTORY_WINDOW_DAYS,
+      contentSha256: sha256(feeds.map((feed) => `${feed.year}:${feed.contentHash}`).join("|")),
+      transformationVersion: "treasury-cmt-v2"
     },
     summary: buildSummary(latest, previous),
     curve: buildCurve(latest),

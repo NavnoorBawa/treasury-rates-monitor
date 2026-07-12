@@ -17,6 +17,7 @@ import {
   ChartNoAxesCombined,
   Check,
   Download,
+  ExternalLink,
   Gauge,
   Focus,
   GitCompareArrows,
@@ -571,15 +572,20 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
       </div>
       <div className="event-rail">
         {visibleEvents.length ? visibleEvents.map((event) => (
-          <button className={eventClass(event)} type="button" key={event.id} onClick={() => focusEvent(event)}>
+          <article className={eventClass(event)} key={event.id}>
             <span>{event.category}</span>
             <strong>{event.title}</strong>
             <small>{formatDate(event.startDate)}{event.endDate ? ` - ${formatDate(event.endDate)}` : ""}</small>
             <em>{event.description}</em>
-            <i><Focus size={14} aria-hidden="true" />Focus charts</i>
-          </button>
+            <small className="event-card__basis">{event.windowBasis}</small>
+            <div className="event-card__actions">
+              <button type="button" onClick={() => focusEvent(event)}><Focus size={14} aria-hidden="true" />Focus charts</button>
+              <a href={event.sourceUrl} target="_blank" rel="noreferrer">{event.sourceName}<ExternalLink size={12} aria-hidden="true" /></a>
+            </div>
+          </article>
         )) : <div className="empty-state">No configured event markers fall inside the selected range.</div>}
       </div>
+      <p className="event-section__note"><Info size={14} aria-hidden="true" />Events are sourced contextual annotations, not causal attributions. A non-observation event date is drawn at the next available official CMT observation.</p>
     </div>
   );
 
@@ -608,7 +614,7 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
         <span>{data?.source.name}</span>
         <span>{data?.source.supplementalSource}</span>
         <span>{data?.source.note}</span>
-        <span>Observed business days only. Weekends, market holidays, and source-level ND values are not imputed.</span>
+        <span>Observed business days only. Weekends, market holidays, and source-level ND values are not imputed. When an event falls on a non-observation date, its chart line is placed at the next available official CMT observation and the event card retains the actual calendar date.</span>
         <span>Last obs. is the latest valid maturity value inside the selected window. Last-value ECDF is the share of valid selected observations at or below that value; Obs. is the valid sample count.</span>
         <span>Min, max, average, volatility, and ECDF use the selected range. 1M, 3M, and 1Y changes use the nearest valid observation on or before each calendar lookback, including an observation just before the visible range; a value is shown only when that observation is within 10 calendar days of the target date.</span>
         <span>Annualized volatility is the sample standard deviation of business-day yield changes multiplied by the square root of 252.</span>
@@ -668,7 +674,7 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
             <div>
               <p className="eyebrow">Macro research layer</p>
               <h2>{activeTab === "comparison" ? "Historical Yield Curve Comparison" : activeTab === "regimes" ? "Curve Movement Regimes" : "Historical Treasury Regime Analysis"}</h2>
-              <p>{activeTab === "comparison" ? "Compare complete Treasury curves from any two official business-day observations." : activeTab === "regimes" ? "Date-to-date two-tenor curve decomposition with completed calendar-period regime history." : "Analyze rates, spreads, event windows, and statistical behavior without leaving the workspace."}</p>
+              <p>{activeTab === "comparison" ? "Compare complete Treasury curves from any two official business-day observations." : activeTab === "regimes" ? "Date-to-date two-tenor decomposition with ex-post classifications of completed calendar periods." : "Analyze rates, spreads, sourced event annotations, and statistical behavior without leaving the workspace."}</p>
             </div>
             <div className="research-source">
               <span>History: {formatDate(data.source.recordStartDate)} - {formatDate(data.source.recordEndDate)}</span>

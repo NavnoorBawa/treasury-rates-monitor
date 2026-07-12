@@ -37,10 +37,11 @@ const maturityColors: Record<DashboardMaturityKey, string> = {
 const formatPrice = (value: number | null | undefined) =>
   typeof value === "number" && Number.isFinite(value) ? value.toFixed(5) : "n/a";
 
-const formatSigned = (value: number, decimals = 2) =>
-  `${value > 0 ? "+" : ""}${value.toFixed(decimals)}`;
+const formatSigned = (value: number | null, decimals = 2) =>
+  value === null ? "n/a" : `${value > 0 ? "+" : ""}${value.toFixed(decimals)}`;
 
-const formatThirtySeconds = (value: number) => {
+const formatThirtySeconds = (value: number | null) => {
+  if (value === null) return "n/a";
   const formatted = value.toFixed(3).replace(/\.?0+$/, "");
   return `${value > 0 ? "+" : ""}${formatted} /32`;
 };
@@ -87,14 +88,14 @@ interface FuturesTooltipProps {
     value?: number;
     payload?: FuturesSeriesPoint;
   }>;
-  previousClose: number;
+  previousClose: number | null;
   comparisonLabel: string;
 }
 
 function FuturesTooltip({ active, label, payload, previousClose, comparisonLabel }: FuturesTooltipProps) {
   const price = payload?.[0]?.payload?.price ?? payload?.[0]?.value;
   if (!active || typeof price !== "number" || typeof label !== "number") return null;
-  const moveThirtySeconds = (price - previousClose) * 32;
+  const moveThirtySeconds = previousClose === null ? null : (price - previousClose) * 32;
 
   return (
     <div className="chart-tooltip chart-tooltip--futures">
@@ -103,15 +104,18 @@ function FuturesTooltip({ active, label, payload, previousClose, comparisonLabel
         <span>Price</span>
         <strong>{formatPrice(price)}</strong>
       </div>
-      <div className="chart-tooltip__row">
-        <span>vs {comparisonLabel.toLowerCase()}</span>
-        <strong>{formatThirtySeconds(moveThirtySeconds)}</strong>
-      </div>
+      {previousClose === null ? null : (
+        <div className="chart-tooltip__row">
+          <span>vs {comparisonLabel.toLowerCase()}</span>
+          <strong>{formatThirtySeconds(moveThirtySeconds)}</strong>
+        </div>
+      )}
     </div>
   );
 }
 
 const rateDirectionLabel = (instrument: FuturesInstrument, sessionState: FuturesMarketState) => {
+  if (instrument.rateDirection === "unavailable") return "Change unavailable";
   const prefix = sessionState === "open" ? "Yield tendency" : "Last quote: yield";
   if (instrument.rateDirection === "higher") return `${prefix} higher`;
   if (instrument.rateDirection === "lower") return `${prefix} lower`;
@@ -133,7 +137,7 @@ export function TreasuryFuturesWorkspace() {
   const chartDomain = useMemo<[number, number]>(() => {
     if (!selected?.series.length) return [0, 1];
     const prices = selected.series.map((point) => point.price);
-    prices.push(selected.previousClose);
+    if (selected.previousClose !== null) prices.push(selected.previousClose);
     const minimum = Math.min(...prices);
     const maximum = Math.max(...prices);
     const padding = Math.max((maximum - minimum) * 0.12, selected.minTick * 2);
@@ -168,22 +172,27 @@ export function TreasuryFuturesWorkspace() {
     .filter((value): value is string => Boolean(value))
     .sort()
     .at(-1) ?? null;
-  const sessionState: FuturesMarketState = data.instruments.some((instrument) => instrument.marketState === "open")
-    ? "open"
-    : data.instruments.some((instrument) => instrument.marketState === "stale")
-      ? "stale"
-      : "closed";
-  const sessionLabel = sessionState === "open"
-    ? "CME session active"
-    : sessionState === "stale"
-      ? "No fresh session quote"
-      : "CME session closed";
+  const contractMarketStates = new Set(data.instruments.map((instrument) => instrument.marketState));
+  const sessionState: FuturesMarketState | "mixed" = data.source.sessionCoherence === "mixed" || contractMarketStates.size > 1
+    ? "mixed"
+    : data.instruments.every((instrument) => instrument.marketState === "open")
+      ? "open"
+      : data.instruments.some((instrument) => instrument.marketState === "stale")
+        ? "stale"
+        : "closed";
+  const sessionLabel = sessionState === "mixed"
+    ? "Mixed contract freshness"
+    : sessionState === "open"
+      ? "CME session active"
+      : sessionState === "stale"
+        ? "No fresh session quote"
+        : "CME session closed";
   const seriesLabel = data.source.seriesMode === "latest-session"
     ? "Latest available session · 5-minute bars"
     : data.source.seriesMode === "snapshot-only"
       ? "Delayed quote snapshot only"
       : `${data.range.intervalLabel} · delayed`;
-  const comparisonLabel = data.source.seriesMode === "latest-session" ? "Prior session last" : "Prior close";
+  const comparisonLabel = selected.comparisonLabel;
   const dataStatus = [
     data.cache.warning,
     ...data.warnings,
@@ -199,7 +208,7 @@ export function TreasuryFuturesWorkspace() {
         <div>
           <p className="eyebrow">Intraday market proxy</p>
           <h2>CBOT Treasury Futures</h2>
-          <p>Traded rate-risk proxies for the 2Y, 5Y, 10Y, and long-bond sectors. Prices are delayed and remain separate from official CMT analytics.</p>
+          <p>Delayed traded proxies for the 2Y, 5Y, 10Y, and 30Y sectors. The long-end instrument is Ultra Bond futures with a 25Y+ deliverable basket; all prices remain separate from official CMT analytics.</p>
         </div>
         <div className="futures-header__status" aria-live="polite">
           <span className={`futures-session futures-session--${sessionState}`}>
@@ -207,7 +216,7 @@ export function TreasuryFuturesWorkspace() {
             {sessionLabel}
           </span>
           <span><Clock3 size={13} aria-hidden="true" /> Latest quote {formatExchangeTime(newestQuoteTime)}</span>
-          <span>{seriesLabel}</span>
+          <span>{seriesLabel}{data.source.latestTradeDate ? ` · latest trade date ${data.source.latestTradeDate}` : ""}</span>
         </div>
       </header>
 
@@ -247,15 +256,19 @@ export function TreasuryFuturesWorkspace() {
               </span>
               <span className="futures-contract__quote">
                 <strong>{formatPrice(instrument.price)}</strong>
-                <small>{formatThirtySeconds(instrument.changeThirtySeconds)} · {formatSigned(instrument.priceChangePct)}%</small>
+                <small>{formatThirtySeconds(instrument.changeThirtySeconds)} · {instrument.priceChangePct === null ? "change n/a" : `${formatSigned(instrument.priceChangePct)}%`}</small>
               </span>
               <span className={`futures-contract__direction futures-contract__direction--${instrument.rateDirection}`}>
-                {instrument.rateDirection === "unchanged" ? null : <DirectionIcon size={14} aria-hidden="true" />}
-                {rateDirectionLabel(instrument, sessionState)}
+                {instrument.rateDirection === "unchanged" || instrument.rateDirection === "unavailable" ? null : <DirectionIcon size={14} aria-hidden="true" />}
+                {rateDirectionLabel(instrument, instrument.marketState)}
               </span>
               <span className="futures-contract__micro">
                 <span>Range {formatPrice(instrument.dayLow)}-{formatPrice(instrument.dayHigh)}</span>
                 <span>Vol {formatVolume(instrument.volume)}</span>
+                <span className={`futures-contract__state futures-contract__state--${instrument.marketState}`}>
+                  {instrument.marketState === "open" ? "Fresh" : instrument.marketState === "stale" ? "Stale" : "Closed"}
+                  {instrument.tradeDate ? ` · ${instrument.tradeDate}` : ""}
+                </span>
               </span>
             </button>
           );
@@ -272,12 +285,12 @@ export function TreasuryFuturesWorkspace() {
             <div className="futures-chart-panel__quote">
               <strong>{formatPrice(selected.price)}</strong>
               <span className={`futures-chart-panel__change futures-chart-panel__change--${selected.rateDirection}`}>
-                {formatThirtySeconds(selected.changeThirtySeconds)} · {formatSigned(selected.priceChangePct)}%
+                {formatThirtySeconds(selected.changeThirtySeconds)} · {selected.priceChangePct === null ? "change n/a" : `${formatSigned(selected.priceChangePct)}%`}
               </span>
             </div>
           </div>
 
-          {selected.series.length ? (
+          {selected.series.length >= 2 ? (
             <div className="futures-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={selected.series} margin={{ top: 14, right: 12, bottom: 4, left: 2 }}>
@@ -312,7 +325,7 @@ export function TreasuryFuturesWorkspace() {
                     content={<FuturesTooltip previousClose={selected.previousClose} comparisonLabel={comparisonLabel} />}
                     cursor={{ stroke: "var(--chart-crosshair)", strokeWidth: 1, strokeDasharray: "3 4" }}
                   />
-                  <ReferenceLine y={selected.previousClose} stroke="var(--zero-line)" strokeDasharray="5 5" label={{ value: comparisonLabel, position: "insideTopLeft", fill: "var(--subtle)", fontSize: 9 }} />
+                  {selected.previousClose === null ? null : <ReferenceLine y={selected.previousClose} stroke="var(--zero-line)" strokeDasharray="5 5" label={{ value: comparisonLabel, position: "insideTopLeft", fill: "var(--subtle)", fontSize: 9 }} />}
                   <Area
                     type="linear"
                     dataKey="price"
@@ -330,7 +343,7 @@ export function TreasuryFuturesWorkspace() {
               <LineChart size={19} aria-hidden="true" />
               <div>
                 <strong>Intraday chart unavailable</strong>
-                <span>Yahoo returned a delayed quote snapshot for {selected.symbol}, but no verified bars. The quote tape remains visible and is not used in official CMT analytics.</span>
+                <span>{selected.series.length === 1 ? "Only one verified session bar is available, so no intraday path or prior-session move is shown." : `Yahoo returned a delayed quote snapshot for ${selected.symbol}, but no verified bars.`} The quote tape remains separate from official CMT analytics.</span>
               </div>
             </div>
           )}
@@ -361,7 +374,7 @@ export function TreasuryFuturesWorkspace() {
             </div>
           </div>
           <div className="futures-methodology__notes">
-            <p><Info size={14} aria-hidden="true" /><span>Each contract tracks a deliverable Treasury basket and is primarily driven by its cheapest-to-deliver security.</span></p>
+            <p><Info size={14} aria-hidden="true" /><span>Each contract tracks a deliverable Treasury basket and is primarily driven by its cheapest-to-deliver security. Ultra Bond uses a 25Y+ basket; it is a 30Y-sector proxy, not the 30Y CMT.</span></p>
             <p><Info size={14} aria-hidden="true" /><span>Raw price moves are not comparable across tenors because duration, DV01, conversion factors, and contract size differ.</span></p>
             <p><Info size={14} aria-hidden="true" /><span>No futures price is converted into a CMT yield, spread, regime, statistic, or CSV field in this dashboard.</span></p>
           </div>

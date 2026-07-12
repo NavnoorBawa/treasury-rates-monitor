@@ -27,7 +27,7 @@ function App() {
             </div>
             <h1>U.S. Treasury Curve Monitor</h1>
             <p className="topbar__subtitle">
-              Official CMT rates, delayed Treasury-futures prices, curve spreads, historical regimes, and date-to-date analysis.
+              Official CMT rates, delayed Treasury-futures proxies, curve spreads, sourced event annotations, and ex-post historical regimes.
             </p>
           </div>
         </div>

@@ -52,6 +52,8 @@ export interface TreasuryPayload {
     feedUpdatedAt: string | null;
     retrievedAt: string;
     historyWindowDays: number;
+    contentSha256: string;
+    transformationVersion: string;
   };
   summary: SummaryPoint[];
   curve: CurvePoint[];
@@ -88,6 +90,10 @@ export interface HistoricalPayload {
     recordStartDate: string | null;
     recordEndDate: string | null;
     supplementalSource: string;
+    h15ContentSha256: string;
+    supplementalContentSha256: string | null;
+    contentSha256: string;
+    transformationVersion: string;
     note: string;
   };
   maturities: Array<{
@@ -120,9 +126,10 @@ export interface HistoricalPayload {
 }
 
 export type FuturesRange = "1D" | "5D" | "1M";
-export type FuturesRateDirection = "higher" | "lower" | "unchanged";
+export type FuturesRateDirection = "higher" | "lower" | "unchanged" | "unavailable";
 export type FuturesMarketState = "open" | "closed" | "stale";
 export type FuturesSeriesMode = "requested-range" | "latest-session" | "snapshot-only";
+export type FuturesSessionCoherence = "coherent" | "mixed" | "unavailable";
 
 export interface FuturesSeriesPoint {
   timestamp: number;
@@ -131,23 +138,28 @@ export interface FuturesSeriesPoint {
 
 export interface FuturesInstrument {
   key: DashboardMaturityKey;
-  symbol: "ZT=F" | "ZF=F" | "ZN=F" | "ZB=F";
+  symbol: "ZT=F" | "ZF=F" | "ZN=F" | "UB=F";
   label: string;
-  shortLabel: DashboardMaturityKey;
+  shortLabel: string;
+  sectorNote?: string;
   minTick: number;
   yahooPageUrl: string;
   contractName: string;
   exchange: string;
   currency: string;
   price: number;
-  previousClose: number;
-  priceChange: number;
-  priceChangePct: number;
-  changeThirtySeconds: number;
+  previousClose: number | null;
+  priceChange: number | null;
+  priceChangePct: number | null;
+  changeThirtySeconds: number | null;
+  comparisonLabel: "Prior close" | "Prior session last" | "Unavailable";
   dayHigh: number | null;
   dayLow: number | null;
   volume: number | null;
   quoteTime: string | null;
+  tradeDate: string | null;
+  sessionBars: number;
+  dataQuality: "verified-session" | "snapshot-only" | "insufficient-history";
   marketState: FuturesMarketState;
   rateDirection: FuturesRateDirection;
   series: FuturesSeriesPoint[];
@@ -165,6 +177,8 @@ export interface FuturesPayload {
     displayUse: string;
     seriesMode: FuturesSeriesMode;
     seriesAsOf: string | null;
+    latestTradeDate: string | null;
+    sessionCoherence: FuturesSessionCoherence;
   };
   range: {
     key: FuturesRange;

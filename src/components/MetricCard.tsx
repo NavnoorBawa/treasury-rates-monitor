@@ -29,6 +29,7 @@ export function MetricCard({ point, previousRecordDate }: MetricCardProps) {
         >
           {formatPct(point.changePct)}
         </span>
+        <span className="metric-card__change-unit">yield level</span>
         <small className="metric-card__change-context">vs {formatDate(previousRecordDate)} observation</small>
       </div>
     </article>
