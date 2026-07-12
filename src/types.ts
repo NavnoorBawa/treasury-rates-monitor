@@ -121,6 +121,8 @@ export interface HistoricalPayload {
 
 export type FuturesRange = "1D" | "5D" | "1M";
 export type FuturesRateDirection = "higher" | "lower" | "unchanged";
+export type FuturesMarketState = "open" | "closed" | "stale";
+export type FuturesSeriesMode = "requested-range" | "latest-session" | "snapshot-only";
 
 export interface FuturesSeriesPoint {
   timestamp: number;
@@ -146,7 +148,7 @@ export interface FuturesInstrument {
   dayLow: number | null;
   volume: number | null;
   quoteTime: string | null;
-  marketState: "open" | "closed";
+  marketState: FuturesMarketState;
   rateDirection: FuturesRateDirection;
   series: FuturesSeriesPoint[];
 }
@@ -161,6 +163,8 @@ export interface FuturesPayload {
     retrievedAt: string;
     delayed: true;
     displayUse: string;
+    seriesMode: FuturesSeriesMode;
+    seriesAsOf: string | null;
   };
   range: {
     key: FuturesRange;

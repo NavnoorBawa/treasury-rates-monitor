@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { getTreasuryFuturesData, normalizeFuturesPayload } from "../server/futuresClient.js";
+import {
+  deriveCmeTreasurySessionState,
+  getTreasuryFuturesData,
+  normalizeFuturesPayload
+} from "../server/futuresClient.js";
 
 const definitions = [
   ["ZT=F", "2-Year T-Note Futures,Sep-2026", 103.25, 103.125],
@@ -35,8 +39,11 @@ const fixture = {
   }
 };
 
-const normalized = normalizeFuturesPayload(fixture, "5D");
+const normalized = normalizeFuturesPayload(fixture, "5D", {
+  nowMs: Date.parse("2026-07-10T20:59:00Z")
+});
 assert.equal(normalized.range.key, "5D");
+assert.equal(normalized.source.seriesMode, "requested-range");
 assert.deepEqual(normalized.instruments.map((instrument) => instrument.symbol), ["ZT=F", "ZF=F", "ZN=F", "ZB=F"]);
 assert.equal(normalized.warnings.length, 0);
 
@@ -53,6 +60,69 @@ assert.equal(normalized.instruments[0].rateDirection, "lower", "A higher futures
 assert.equal(normalized.instruments[1].rateDirection, "higher", "A lower futures price must imply a higher yield tendency");
 assert.equal(normalized.instruments[2].rateDirection, "unchanged");
 assert.equal(normalized.instruments[3].rateDirection, "lower");
+
+assert.equal(
+  deriveCmeTreasurySessionState(Date.parse("2026-07-12T21:30:00Z"), Date.parse("2026-07-10T20:59:00Z")),
+  "closed",
+  "Sunday before the 5:00 p.m. CT reopen must be closed"
+);
+assert.equal(
+  deriveCmeTreasurySessionState(Date.parse("2026-07-12T22:30:00Z"), Date.parse("2026-07-12T22:20:00Z")),
+  "open",
+  "Sunday after the 5:00 p.m. CT reopen with a fresh quote must be open"
+);
+assert.equal(
+  deriveCmeTreasurySessionState(Date.parse("2026-07-15T21:30:00Z"), Date.parse("2026-07-15T21:29:00Z")),
+  "closed",
+  "The 4:00-5:00 p.m. CT maintenance interval must be closed"
+);
+assert.equal(
+  deriveCmeTreasurySessionState(Date.parse("2026-07-15T20:30:00Z"), Date.parse("2026-07-15T20:20:00Z")),
+  "open",
+  "A fresh quote during standard CME hours must be open"
+);
+assert.equal(
+  deriveCmeTreasurySessionState(Date.parse("2026-07-13T15:00:00Z"), Date.parse("2026-07-10T20:59:00Z")),
+  "stale",
+  "Standard hours with no fresh quote must not be reported as open"
+);
+
+const latestSession = normalizeFuturesPayload(fixture, "1D", {
+  latestSessionOnly: true,
+  seriesMode: "latest-session",
+  nowMs: Date.parse("2026-07-12T21:30:00Z")
+});
+assert.equal(latestSession.source.seriesMode, "latest-session");
+assert.ok(latestSession.source.seriesAsOf);
+assert.ok(latestSession.instruments.every((instrument) => instrument.marketState === "closed"));
+
+const weekendFallbackFixture = structuredClone(fixture);
+for (const result of weekendFallbackFixture.spark.result) {
+  const chart = result.response[0];
+  const priorSessionClose = chart.meta.regularMarketPrice + 0.125;
+  chart.meta.previousClose = chart.meta.regularMarketPrice;
+  chart.timestamp = [
+    Date.parse("2026-07-09T20:55:00Z") / 1000,
+    Date.parse("2026-07-09T22:00:00Z") / 1000,
+    Date.parse("2026-07-10T20:59:00Z") / 1000
+  ];
+  chart.indicators.quote[0].close = [
+    priorSessionClose,
+    chart.meta.regularMarketPrice + 0.0625,
+    chart.meta.regularMarketPrice
+  ];
+}
+const weekendFallback = normalizeFuturesPayload(weekendFallbackFixture, "1D", {
+  latestSessionOnly: true,
+  seriesMode: "latest-session",
+  nowMs: Date.parse("2026-07-12T21:30:00Z")
+});
+assert.equal(
+  weekendFallback.instruments[0].previousClose,
+  weekendFallbackFixture.spark.result[0].response[0].meta.regularMarketPrice + 0.125,
+  "Latest-session fallback must use the prior CME session close, not Yahoo's weekend-reset previousClose"
+);
+assert.equal(weekendFallback.instruments[0].changeThirtySeconds, -4);
 
 const roundedQuoteFixture = structuredClone(fixture);
 roundedQuoteFixture.spark.result[0].response[0].meta.regularMarketPrice = 103.24999;

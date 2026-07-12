@@ -6,6 +6,7 @@ const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const fetchTreasuryFutures = async (range: FuturesRange, signal?: AbortSignal): Promise<FuturesPayload> => {
   const response = await fetch(`/api/futures?range=${range}`, {
     signal,
+    cache: "no-store",
     headers: {
       Accept: "application/json"
     }

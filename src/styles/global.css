@@ -3716,6 +3716,11 @@ h3 {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--series-2y) 14%, transparent);
 }
 
+.futures-session--stale i {
+  background: var(--series-5y);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--series-5y) 14%, transparent);
+}
+
 .futures-warning {
   margin: 0 0 8px;
   padding: 8px 10px;
@@ -3728,6 +3733,11 @@ h3 {
 
 .futures-warning strong {
   color: var(--ink);
+}
+
+.futures-warning--info {
+  border-left-color: var(--series-2y);
+  color: var(--muted);
 }
 
 .futures-toolbar {
@@ -3902,6 +3912,7 @@ h3 {
 .futures-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.62fr) minmax(290px, 0.5fr);
+  align-items: start;
   gap: 9px;
   margin-top: 9px;
 }
@@ -3940,6 +3951,41 @@ h3 {
 .futures-chart {
   height: 340px;
   margin-top: 6px;
+}
+
+.futures-chart-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 118px;
+  margin-top: 8px;
+  padding: 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 4px;
+  background: var(--surface-raised);
+  color: var(--muted);
+}
+
+.futures-chart-empty > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--series-10y);
+}
+
+.futures-chart-empty > div {
+  display: grid;
+  max-width: 620px;
+  gap: 5px;
+}
+
+.futures-chart-empty strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.futures-chart-empty span {
+  font-size: 9.5px;
+  line-height: 1.5;
 }
 
 .chart-tooltip--futures {

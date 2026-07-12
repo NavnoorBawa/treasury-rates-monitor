@@ -711,6 +711,11 @@ h3 {
   margin-top: 4px;
 }
 
+.futures-chart-empty {
+  min-height: 112px;
+  border-radius: 3px;
+}
+
 .futures-chart-stats,
 .futures-inverse-map {
   border-radius: 3px;
