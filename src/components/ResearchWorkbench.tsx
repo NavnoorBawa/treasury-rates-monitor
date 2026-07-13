@@ -320,8 +320,8 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
     window.history.replaceState(window.history.state, "", nextUrl);
     const activeLabel = workspaceTabs.find((tab) => tab.id === activeTab)?.label;
     document.title = activeTab === "snapshot"
-      ? "U.S. Treasury Yield Dashboard"
-      : `${activeLabel} · U.S. Treasury Yield Dashboard`;
+      ? "U.S. Treasury Rates Monitor"
+      : `${activeLabel} · U.S. Treasury Rates Monitor`;
   }, [activeTab, comparisonAsOf, comparisonReference, historyView, preset, range.end, range.start, regimeHorizon, selectedPairKey, selectedSpread]);
 
   useEffect(() => {

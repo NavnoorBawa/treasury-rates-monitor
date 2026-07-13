@@ -1,4 +1,4 @@
-# U.S. Treasury Yield Dashboard
+# U.S. Treasury Rates Monitor
 
 A clean institutional-style dashboard for U.S. Treasury Constant Maturity rates and delayed Treasury-futures monitoring. It displays current 2Y, 5Y, 10Y, and 30Y CMT yields, daily moves in basis points and percent, a separate intraday futures tape, six core curve spreads, date-to-date curve comparison, long-run macro research, and light/dark themes.
 

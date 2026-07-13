@@ -194,10 +194,10 @@ app.use((_request, response) => {
 const server = app.listen(PORT);
 
 server.on("listening", () => {
-  console.log(`Treasury Yield Dashboard listening on http://localhost:${PORT}`);
+  console.log(`U.S. Treasury Rates Monitor listening on http://localhost:${PORT}`);
 });
 
 server.on("error", (error) => {
-  console.error(`Treasury Yield Dashboard could not bind to port ${PORT}: ${error.message}`);
+  console.error(`U.S. Treasury Rates Monitor could not bind to port ${PORT}: ${error.message}`);
   process.exitCode = 1;
 });

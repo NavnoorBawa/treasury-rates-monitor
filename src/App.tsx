@@ -25,7 +25,7 @@ function App() {
               <i aria-hidden="true" />
               <span>Treasury Research</span>
             </div>
-            <h1>U.S. Treasury Curve Monitor</h1>
+            <h1>U.S. Treasury Rates Monitor</h1>
             <p className="topbar__subtitle">
               Official CMT rates, curve structure, and historical regimes.
             </p>

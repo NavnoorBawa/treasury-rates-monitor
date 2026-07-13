@@ -1,6 +1,6 @@
 {
-  "name": "U.S. Treasury Yield Dashboard",
-  "short_name": "Treasury Yields",
+  "name": "U.S. Treasury Rates Monitor",
+  "short_name": "Treasury Monitor",
   "description": "U.S. Treasury research dashboard with official CMT rates, H.15 history, spreads, and sourced macro event annotations.",
   "start_url": "/",
   "display": "standalone",
