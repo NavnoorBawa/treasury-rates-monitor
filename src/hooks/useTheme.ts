@@ -5,7 +5,7 @@ export type Theme = "light" | "dark";
 const storageKey = "treasury-yield-dashboard-theme";
 const themeColors: Record<Theme, string> = {
   light: "#f3f5f3",
-  dark: "#0a0d0c"
+  dark: "#0e1110"
 };
 
 const getInitialTheme = (): Theme => {

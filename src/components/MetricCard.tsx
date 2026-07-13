@@ -15,7 +15,7 @@ export function MetricCard({ point, previousRecordDate }: MetricCardProps) {
   return (
     <article className={`metric-card ${maturityClass}`}>
       <div className="metric-card__topline">
-        <span>{point.shortLabel} CMT</span>
+        <span><i className="metric-card__series-marker" aria-hidden="true" />{point.shortLabel} CMT</span>
         <span className="metric-card__tenor">{point.label}</span>
       </div>
       <div className="metric-card__value">{formatYield(point.value)}</div>

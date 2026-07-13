@@ -639,9 +639,10 @@ export function ResearchWorkbench({ currentData, currentLoading, currentError }:
               tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               onKeyDown={(event) => handleWorkspaceTabKeyDown(event, tab.id)}
+              aria-label={`${tab.label}: ${tab.description}`}
             >
               <Icon size={17} aria-hidden="true" />
-              <span><strong>{tab.label}</strong><small>{tab.description}</small></span>
+              <strong>{tab.label}</strong>
             </button>
           );
         })}

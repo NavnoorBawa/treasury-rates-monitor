@@ -208,7 +208,7 @@ export function TreasuryFuturesWorkspace() {
         <div>
           <p className="eyebrow">Intraday market proxy</p>
           <h2>CBOT Treasury Futures</h2>
-          <p>Delayed traded proxies for the 2Y, 5Y, 10Y, and 30Y sectors. The long-end instrument is Ultra Bond futures with a 25Y+ deliverable basket; all prices remain separate from official CMT analytics.</p>
+          <p>Delayed exchange-traded rate-risk proxies. Prices are not CMT yields and never enter official curve analytics.</p>
         </div>
         <div className="futures-header__status" aria-live="polite">
           <span className={`futures-session futures-session--${sessionState}`}>
