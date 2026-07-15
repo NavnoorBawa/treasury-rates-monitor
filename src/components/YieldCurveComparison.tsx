@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { CalendarRange, Info, X } from "lucide-react";
+import { CalendarRange, ChevronDown, ChevronUp, HelpCircle, Info, X } from "lucide-react";
 import { formatBps, formatDate, formatYield } from "../lib/format";
 import {
   buildCurveMove,
@@ -98,6 +98,7 @@ export function YieldCurveComparison({
   onSecondReferenceDateChange
 }: YieldCurveComparisonProps) {
   const [hiddenSeries, setHiddenSeries] = useState<Partial<Record<ComparisonSeriesKey, boolean>>>({});
+  const [showMethodology, setShowMethodology] = useState(false);
 
   const asOfRow = useMemo(
     () => (asOfDate ? findCompleteCurveObservationOnOrBefore(rows, asOfDate) : null),
@@ -358,7 +359,69 @@ export function YieldCurveComparison({
                   Six two-tenor segments · near-parallel within a ±{comparisonToleranceBps} bps slope change ·
                   ex-post description of the selected dates, not a signal
                 </span>
+                <button
+                  type="button"
+                  className="comparison-method-toggle"
+                  aria-expanded={showMethodology}
+                  onClick={() => setShowMethodology((current) => !current)}
+                >
+                  <HelpCircle size={14} aria-hidden="true" />
+                  How is this calculated?
+                  {showMethodology ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+                </button>
               </div>
+              {showMethodology ? (
+                <div className="comparison-method">
+                  <ol className="comparison-method__steps">
+                    <li>
+                      <strong>Measure each tenor&apos;s move.</strong> For a segment such as 10Y - 2Y, take how much each
+                      of the two yields changed between the reference date and the as-of date, in basis points
+                      (1 bp = 0.01 percentage point).
+                    </li>
+                    <li>
+                      <strong>Slope change.</strong> Long-tenor move minus short-tenor move. A positive value means the
+                      gap widened (curve steepened); a negative value means it narrowed (curve flattened).
+                    </li>
+                    <li>
+                      <strong>Pair average move.</strong> The average of the two moves. Positive = yields rose overall
+                      (<em>bear</em>, since bond prices fell); negative = yields fell overall (<em>bull</em>).
+                    </li>
+                    <li>
+                      <strong>Combine them.</strong> If the slope change stays within ±{comparisonToleranceBps} bps the move
+                      counts as near-parallel; otherwise the slope direction picks steepening or flattening, and the pair
+                      average picks bull or bear.
+                    </li>
+                  </ol>
+                  <div className="comparison-method__rules" aria-label="Classification outcomes">
+                    <span style={{ "--regime-color": regimeColors["Bull steepening"] } as CSSProperties}>Slope &gt; +{comparisonToleranceBps} bps · avg &lt; 0 → <strong>Bull steepening</strong></span>
+                    <span style={{ "--regime-color": regimeColors["Bear steepening"] } as CSSProperties}>Slope &gt; +{comparisonToleranceBps} bps · avg &gt; 0 → <strong>Bear steepening</strong></span>
+                    <span style={{ "--regime-color": regimeColors["Bull flattening"] } as CSSProperties}>Slope &lt; -{comparisonToleranceBps} bps · avg &lt; 0 → <strong>Bull flattening</strong></span>
+                    <span style={{ "--regime-color": regimeColors["Bear flattening"] } as CSSProperties}>Slope &lt; -{comparisonToleranceBps} bps · avg &gt; 0 → <strong>Bear flattening</strong></span>
+                    <span style={{ "--regime-color": regimeColors["Parallel shift lower"] } as CSSProperties}>|Slope| ≤ {comparisonToleranceBps} bps · avg &lt; 0 → <strong>Parallel shift lower</strong></span>
+                    <span style={{ "--regime-color": regimeColors["Parallel shift higher"] } as CSSProperties}>|Slope| ≤ {comparisonToleranceBps} bps · avg &gt; 0 → <strong>Parallel shift higher</strong></span>
+                  </div>
+                  {(() => {
+                    const example = moveBlocks[0]?.moves.find((entry) => entry.move)?.pair;
+                    const exampleMove = moveBlocks[0]?.moves.find((entry) => entry.move)?.move;
+                    if (!example || !exampleMove) return null;
+                    return (
+                      <p className="comparison-method__example">
+                        <strong>Worked example from your selection ({example.label}):</strong>{" "}
+                        {example.shortKey} moved {formatBps(exampleMove.shortDeltaBps)} and {example.longKey} moved{" "}
+                        {formatBps(exampleMove.longDeltaBps)} between {formatDate(moveBlocks[0].referenceDate)} and{" "}
+                        {formatDate(asOfRow?.date)}. Slope change = {formatBps(exampleMove.longDeltaBps)} − ({formatBps(exampleMove.shortDeltaBps)}) ={" "}
+                        {formatBps(exampleMove.spreadDeltaBps)}; pair average = ({formatBps(exampleMove.longDeltaBps)} + {formatBps(exampleMove.shortDeltaBps)}) / 2 ={" "}
+                        {formatBps(exampleMove.levelDeltaBps)}. That combination is classified as{" "}
+                        <strong style={{ color: regimeColors[exampleMove.type] }}>{exampleMove.type}</strong>.
+                      </p>
+                    );
+                  })()}
+                  <p className="comparison-method__note">
+                    An exactly zero pair average is neutral and left unclassified. These labels describe what happened
+                    between the two selected observations; they are not forecasts or trading signals.
+                  </p>
+                </div>
+              ) : null}
               {moveBlocks.map((block) => (
                 <div className="comparison-regimes__block" key={block.referenceDate}>
                   <span className="comparison-regimes__ref">
