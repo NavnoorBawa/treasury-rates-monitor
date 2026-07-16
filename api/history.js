@@ -1,5 +1,5 @@
 import { HISTORY_CACHE_TTL_MS } from "../server/config.js";
-import { getHistoricalYieldData } from "../server/historicalClient.js";
+import { getHistoricalYieldData } from "../server/clients/historicalClient.js";
 
 let cachedValue = null;
 let expiresAt = 0;
@@ -40,4 +40,3 @@ export default async function handler(_request, response) {
     });
   }
 }
-

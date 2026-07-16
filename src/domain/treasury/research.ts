@@ -1,4 +1,4 @@
-import type { CoreCurveSpreadKey, DashboardMaturityKey, HistoricalRow, ResearchMaturityKey, SpreadKey } from "../types";
+import type { CoreCurveSpreadKey, DashboardMaturityKey, HistoricalRow, ResearchMaturityKey, SpreadKey } from "./types";
 
 export type RangePreset = "1Y" | "5Y" | "10Y" | "20Y" | "MAX" | "CUSTOM";
 

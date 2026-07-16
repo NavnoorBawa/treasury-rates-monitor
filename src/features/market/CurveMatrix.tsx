@@ -1,7 +1,7 @@
 import { useState, type DragEvent, type KeyboardEvent } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Clock3, Database, GripVertical, RotateCcw } from "lucide-react";
-import { formatBps, formatDate, formatTimestamp } from "../lib/format";
-import type { SpreadPoint, TreasuryPayload } from "../types";
+import type { SpreadPoint, TreasuryPayload } from "@/domain/treasury/types";
+import { formatBps, formatDate, formatTimestamp } from "@/utils/format";
 
 interface CurveMatrixProps {
   data: TreasuryPayload;

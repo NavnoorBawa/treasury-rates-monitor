@@ -3,7 +3,7 @@ import {
   deriveCmeTreasurySessionState,
   getTreasuryFuturesData,
   normalizeFuturesPayload
-} from "../server/futuresClient.js";
+} from "../server/clients/futuresClient.js";
 
 const definitions = [
   ["ZT=F", "2-Year T-Note Futures,Sep-2026", 103.25, 103.125],

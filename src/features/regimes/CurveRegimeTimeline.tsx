@@ -11,7 +11,6 @@ import {
   YAxis
 } from "recharts";
 import { Info, MoveRight, TrendingDown, TrendingUp } from "lucide-react";
-import { formatBps, formatDate } from "../lib/format";
 import {
   buildCurveMoveForDates,
   buildCurveRegimeTimeline,
@@ -27,8 +26,9 @@ import {
   type CurvePair,
   type CurveRegimePoint,
   type MacroEvent
-} from "../lib/research";
-import type { HistoricalRow } from "../types";
+} from "@/domain/treasury/research";
+import type { HistoricalRow } from "@/domain/treasury/types";
+import { formatBps, formatDate } from "@/utils/format";
 
 interface ChartEventMarker {
   event: MacroEvent;

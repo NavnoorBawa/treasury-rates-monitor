@@ -1,5 +1,5 @@
 import { CACHE_TTL_MS } from "../server/config.js";
-import { getTreasuryYieldData } from "../server/treasuryClient.js";
+import { getTreasuryYieldData } from "../server/clients/treasuryClient.js";
 
 let cachedValue = null;
 let expiresAt = 0;
@@ -40,4 +40,3 @@ export default async function handler(_request, response) {
     });
   }
 }
-

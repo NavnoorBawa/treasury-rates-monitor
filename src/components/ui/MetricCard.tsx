@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
-import { formatBps, formatDate, formatPct, formatYield } from "../lib/format";
-import type { SummaryPoint } from "../types";
+import type { SummaryPoint } from "@/domain/treasury/types";
+import { formatBps, formatDate, formatPct, formatYield } from "@/utils/format";
 
 interface MetricCardProps {
   point: SummaryPoint;

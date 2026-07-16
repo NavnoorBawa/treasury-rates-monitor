@@ -18,14 +18,14 @@ import {
   LineChart,
   RefreshCw
 } from "lucide-react";
-import { useTreasuryFutures } from "../hooks/useTreasuryFutures";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import type {
   DashboardMaturityKey,
   FuturesInstrument,
   FuturesMarketState,
   FuturesSeriesPoint
-} from "../types";
-import { LoadingBlock } from "./LoadingBlock";
+} from "@/domain/treasury/types";
+import { useTreasuryFutures } from "./useTreasuryFutures";
 
 const maturityColors: Record<DashboardMaturityKey, string> = {
   "2Y": "var(--series-2y)",

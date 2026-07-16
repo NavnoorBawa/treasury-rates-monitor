@@ -10,7 +10,6 @@ import {
   YAxis
 } from "recharts";
 import { CalendarRange, ChevronDown, ChevronUp, HelpCircle, Info, X } from "lucide-react";
-import { formatBps, formatDate, formatYield } from "../lib/format";
 import {
   buildCurveMove,
   curveMoveShapeToleranceBps,
@@ -18,8 +17,9 @@ import {
   findCompleteCurveObservationOnOrBefore,
   maturityKeys,
   type CurveMoveClassification
-} from "../lib/research";
-import type { HistoricalRow } from "../types";
+} from "@/domain/treasury/research";
+import type { HistoricalRow } from "@/domain/treasury/types";
+import { formatBps, formatDate, formatYield } from "@/utils/format";
 
 interface YieldCurveComparisonProps {
   rows: HistoricalRow[];

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { FuturesPayload, FuturesRange } from "../types";
+import type { FuturesPayload, FuturesRange } from "@/domain/treasury/types";
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 

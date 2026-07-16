@@ -1,4 +1,4 @@
-import { formatShortDate, formatYield } from "../lib/format";
+import { formatShortDate, formatYield } from "@/utils/format";
 
 interface ChartTooltipProps {
   active?: boolean;
@@ -29,4 +29,3 @@ export function ChartTooltip({ active, label, payload }: ChartTooltipProps) {
     </div>
   );
 }
-

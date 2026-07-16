@@ -7,7 +7,7 @@ import {
   HISTORICAL_MATURITIES,
   HISTORICAL_SOURCE,
   RESEARCH_SPREADS
-} from "./config.js";
+} from "../config.js";
 import { getTreasuryYieldData } from "./treasuryClient.js";
 
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");

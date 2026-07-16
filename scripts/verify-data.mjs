@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { getHistoricalYieldData } from "../server/historicalClient.js";
-import { getTreasuryYieldData } from "../server/treasuryClient.js";
+import { getHistoricalYieldData } from "../server/clients/historicalClient.js";
+import { getTreasuryYieldData } from "../server/clients/treasuryClient.js";
 
 const approxEqual = (actual, expected, label) => {
   assert.equal(Number(actual).toFixed(3), Number(expected).toFixed(3), label);

@@ -1,8 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import App from "./App";
-import { AppErrorBoundary } from "./components/AppErrorBoundary";
+import App from "@/app/App";
+import { AppErrorBoundary } from "@/app/AppErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {

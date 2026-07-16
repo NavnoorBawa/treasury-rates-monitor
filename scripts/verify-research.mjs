@@ -8,7 +8,7 @@ import {
   curvePairs,
   getEventMarkerDate,
   movementRationale
-} from "../src/lib/research.ts";
+} from "../src/domain/treasury/research.ts";
 
 const expectedClassifications = [
   [4, -1, "Bull steepening"],

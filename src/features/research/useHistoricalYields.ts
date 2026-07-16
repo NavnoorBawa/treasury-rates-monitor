@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { HistoricalPayload } from "../types";
+import type { HistoricalPayload } from "@/domain/treasury/types";
 
 const REFRESH_INTERVAL_MS = 30 * 60 * 1000;
 

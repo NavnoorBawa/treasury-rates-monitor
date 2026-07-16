@@ -1,12 +1,12 @@
 import { Landmark, RefreshCw, Moon, Sun } from "lucide-react";
-import { LoadingBlock } from "./components/LoadingBlock";
-import { MetricCard } from "./components/MetricCard";
-import { ResearchWorkbench } from "./components/ResearchWorkbench";
-import { useTheme } from "./hooks/useTheme";
-import { useTreasuryYields } from "./hooks/useTreasuryYields";
-import { formatDate } from "./lib/format";
-import "./styles/global.css";
-import "./styles/trader-workspace.css";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { useTreasuryYields } from "@/features/market/useTreasuryYields";
+import { ResearchWorkbench } from "@/features/research/ResearchWorkbench";
+import { useTheme } from "@/hooks/useTheme";
+import "@/styles/global.css";
+import "@/styles/trader-workspace.css";
+import { formatDate } from "@/utils/format";
 
 function App() {
   const { theme, toggleTheme } = useTheme();

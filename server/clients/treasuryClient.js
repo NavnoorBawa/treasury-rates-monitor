@@ -8,7 +8,7 @@ import {
   RESEARCH_SPREADS,
   TREASURY_DATASET,
   TREASURY_FEED_URL
-} from "./config.js";
+} from "../config.js";
 
 const parser = new XMLParser({
   ignoreAttributes: false,

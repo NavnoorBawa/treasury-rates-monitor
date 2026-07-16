@@ -5,9 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CACHE_TTL_MS, FUTURES_CACHE_TTL_MS, HISTORY_CACHE_TTL_MS, PORT } from "./config.js";
 import { MemoryCache } from "./cache.js";
-import { getTreasuryFuturesData, normalizeFuturesRange } from "./futuresClient.js";
-import { getHistoricalYieldData } from "./historicalClient.js";
-import { getTreasuryYieldData } from "./treasuryClient.js";
+import { getTreasuryFuturesData, normalizeFuturesRange } from "./clients/futuresClient.js";
+import { getHistoricalYieldData } from "./clients/historicalClient.js";
+import { getTreasuryYieldData } from "./clients/treasuryClient.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

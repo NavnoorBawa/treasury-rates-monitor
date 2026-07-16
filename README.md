@@ -39,7 +39,7 @@ For long-run regime analysis, the app also uses the official Federal Reserve H.1
 - H.15 DDP page: <https://www.federalreserve.gov/datadownload/Choose.aspx?rel=H15>
 - Direct CSV package: `https://www.federalreserve.gov/datadownload/Output.aspx?rel=H15&series=bf17364827e38702b42a58cf8eaa3f78&lastobs=&from=&to=&filetype=csv&label=include&layout=seriescolumn&type=package`
 
-This gives reliable long-run daily history back to the earliest available H.15 observations, while Treasury XML supplements the newest current observation if Treasury has published a later record than H.15/FRED. See [DATA_SOURCE_DECISION.md](./DATA_SOURCE_DECISION.md) for the source comparison and freshness check.
+This gives reliable long-run daily history back to the earliest available H.15 observations, while Treasury XML supplements the newest current observation if Treasury has published a later record than H.15/FRED. See [docs/data-sources.md](./docs/data-sources.md) for the source comparison and freshness check.
 
 ## Research Features
 
@@ -150,6 +150,9 @@ api/
   health.js             Vercel health check
   history.js            Vercel H.15 history function
   yields.js             Vercel current Treasury function
+docs/
+  architecture.md       Runtime layers, ownership boundaries, and conventions
+  data-sources.md       Source comparison, lineage, and intraday-data decision
 public/
   404.html               Production not-found page
   favicon.svg            Browser icon
@@ -161,21 +164,26 @@ scripts/
   verify-futures.mjs     Futures normalization and live-feed checks
   verify-research.mjs    Regime, statistics, event, and CSV assertions
 server/
-  cache.js              In-memory cache
-  config.js             Source URLs, maturity definitions, runtime config
-  futuresClient.js      Yahoo delayed Treasury-futures fetch/fallback/validation logic
-  historicalClient.js   Federal Reserve H.15 DDP CSV fetch/parse/normalize logic
-  index.js              Express app, API routes, production static serving
-  treasuryClient.js     Treasury XML fetch/parse/normalize logic
+  clients/
+    futuresClient.js     Yahoo delayed Treasury-futures fetch/fallback/validation logic
+    historicalClient.js Federal Reserve H.15 DDP CSV fetch/parse/normalize logic
+    treasuryClient.js   Treasury XML fetch/parse/normalize logic
+  cache.js               In-memory cache
+  config.js              Source URLs, maturity definitions, runtime config
+  index.js               Express app, API routes, production static serving
 src/
-  components/           Tabbed workspace, curve matrix, comparison, charts, and regime timeline
-  hooks/                Official, historical, futures, and theme hooks
-  lib/                  Formatting, event, range, and statistics utilities
-  styles/               Theme tokens and responsive layout
-  types.ts              Shared frontend data contracts
-DATA_SOURCE_DECISION.md Source comparison, lineage, and intraday-data decision
-vercel.json             Serverless functions, caching, and security headers
+  app/                   Root application shell and error boundary
+  components/ui/         Reusable presentation-only components
+  domain/treasury/       Typed Treasury contracts and financial research logic
+  features/              Market, futures, research, and regime workspaces
+  hooks/                 Cross-application React hooks
+  styles/                Theme tokens and responsive layout
+  utils/                 Generic formatting utilities
+  main.tsx               React bootstrap and query provider
+vercel.json              Serverless functions, caching, and security headers
 ```
+
+Frontend imports use the `@/` alias for `src/`. Detailed dependency and ownership rules are documented in [docs/architecture.md](./docs/architecture.md).
 
 ## Deployment
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { TreasuryPayload } from "../types";
+import type { TreasuryPayload } from "@/domain/treasury/types";
 
 const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 

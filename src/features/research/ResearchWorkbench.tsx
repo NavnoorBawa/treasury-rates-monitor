@@ -28,14 +28,14 @@ import {
   Link2,
   RotateCcw
 } from "lucide-react";
-import { CurveMatrix } from "./CurveMatrix";
-import { CurveRegimeTimeline } from "./CurveRegimeTimeline";
-import { LoadingBlock } from "./LoadingBlock";
-import { TreasuryFuturesWorkspace } from "./TreasuryFuturesWorkspace";
-import { YieldCurveChart } from "./YieldCurveChart";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { CurveRegimeTimeline } from "@/features/regimes/CurveRegimeTimeline";
+import { TreasuryFuturesWorkspace } from "@/features/futures/TreasuryFuturesWorkspace";
+import { CurveMatrix } from "@/features/market/CurveMatrix";
+import { YieldCurveChart } from "@/features/market/YieldCurveChart";
 import { YieldCurveComparison } from "./YieldCurveComparison";
-import { useHistoricalYields } from "../hooks/useHistoricalYields";
-import { formatBps, formatDate, formatShortDate, formatTimestamp, formatYield } from "../lib/format";
+import { useHistoricalYields } from "./useHistoricalYields";
+import { formatBps, formatDate, formatShortDate, formatTimestamp, formatYield } from "@/utils/format";
 import {
   buildStats,
   buildTreasuryCurveCsv,
@@ -52,8 +52,8 @@ import {
   type CurveMoveHorizon,
   type MacroEvent,
   type RangePreset
-} from "../lib/research";
-import type { ResearchMaturityKey, SpreadKey, TreasuryPayload } from "../types";
+} from "@/domain/treasury/research";
+import type { ResearchMaturityKey, SpreadKey, TreasuryPayload } from "@/domain/treasury/types";
 
 type WorkspaceTab = "snapshot" | "futures" | "comparison" | "history" | "events" | "regimes";
 type HistoryView = "charts" | "statistics";

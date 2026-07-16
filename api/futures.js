@@ -1,5 +1,5 @@
 import { FUTURES_CACHE_TTL_MS } from "../server/config.js";
-import { getTreasuryFuturesData, normalizeFuturesRange } from "../server/futuresClient.js";
+import { getTreasuryFuturesData, normalizeFuturesRange } from "../server/clients/futuresClient.js";
 
 const cacheByRange = new Map();
 

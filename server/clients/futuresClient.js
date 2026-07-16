@@ -2,7 +2,7 @@ import {
   FUTURES_RANGES,
   FUTURES_SOURCE,
   TREASURY_FUTURES
-} from "./config.js";
+} from "../config.js";
 
 const YAHOO_HOSTS = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
 const REQUEST_TIMEOUT_MS = 10_000;

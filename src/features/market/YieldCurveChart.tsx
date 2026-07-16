@@ -7,9 +7,9 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { ChartTooltip } from "./ChartTooltip";
-import { formatDate } from "../lib/format";
-import type { CurvePoint } from "../types";
+import { ChartTooltip } from "@/components/ui/ChartTooltip";
+import type { CurvePoint } from "@/domain/treasury/types";
+import { formatDate } from "@/utils/format";
 
 interface YieldCurveChartProps {
   data: CurvePoint[];
